@@ -3,13 +3,18 @@ from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from time import sleep
 import pyautogui as pyg
+from selenium.webdriver.support.ui import Select
 
 def s(seconds):
     sleep(seconds)
 
 class ImportBot():
-    """Kør: python -i scraper/chadOasisScraper.py
-    Kræver Chrome v105"""
+    """Kør: 
+    1. cd scraper
+    2. python -i oasis.py
+
+    Afslut: exit()
+    Kræver: Chrome v105 + ikke-for-lille-skærm"""
     def __init__(self):
         chrome_options = Options()
         chrome_options.add_argument("--start-maximized")
@@ -51,33 +56,39 @@ class ImportBot():
         pyg.hotkey('ctrl', 'a')
         s(0.5)
         pyg.typewrite(date)
-        s(1)
-        pyg.hotkey('enter')
+        s(5)
+
+        # og så tryk i midten af siden så den registrerer ændringen:
+        pyg.moveTo(x=899, y=500)
         s(0.5)
+        pyg.click()
+        s(2)
 
     def download_csv(self):
-        pyg.moveTo(x=293, y=217)
+        pyg.moveTo(x=239, y=248)
         s(0.5)
         pyg.click()
         s(0.5)
 
     def selectHour(self, hour: int):
-        #hej mor
-        print('hej mor')
+        """Note: 1. operation hour er 7-8 am deres tid."""
+        opr_hour_elem = Select(self.driver.find_element_by_css_selector("table#PFC_OprHour_TABLE tr td select"))
+        opr_hour_elem.select_by_value(str(hour))
+        s(0.5)
 
 
 
 if __name__ == '__main__':
-    #hent sidste id.
     print("Den er startet")
     
     chad = ImportBot()
     chad.goToFMM()
     chad.selectAllNodes()
+    chad.selectHour(5)
     chad.selectDate("08/09/2022")
     chad.download_csv()
 
-    #todo lav loop over brugers input.
+    #todo: lav loop over brugers input. (date + hour)
     #bare husk at det er mm/dd/yyyy
     #Plan:
     # 1. check om end er noget
