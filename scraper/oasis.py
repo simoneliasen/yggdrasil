@@ -81,12 +81,12 @@ class ImportBot():
 if __name__ == '__main__':
     print("Den er startet")
     
-    chad = ImportBot()
-    chad.goToFMM()
-    chad.selectAllNodes()
-    chad.selectHour(5)
-    chad.selectDate("08/09/2022")
-    chad.download_csv()
+    virgin = ImportBot()
+    virgin.goToFMM()
+    virgin.selectAllNodes()
+    virgin.selectHour(5)
+    virgin.selectDate("08/09/2022")
+    virgin.download_csv()
 
     #todo: lav loop over brugers input. (date + hour)
     #bare husk at det er mm/dd/yyyy
