@@ -1,0 +1,9 @@
+{
+  "dependencies": {
+    "fs": "^0.0.1-security",
+    "superagent": "^8.0.0"
+  },
+  "devDependencies": {
+    "eslint": "^8.24.0"
+  }
+}
