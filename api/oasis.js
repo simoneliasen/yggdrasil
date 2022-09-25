@@ -6,7 +6,7 @@ const fs = require('fs');
 const admZip = require('adm-zip');
 
 //Installation:
-// download node
+// download node.js
 // I terminal: cd api && npm install
 
 
