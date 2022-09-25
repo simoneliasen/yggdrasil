@@ -1,9 +1,9 @@
 # Yggdrasil Commodities
-* *Repository for the project "Day-Ahead Electricity Price Forecasting on CAISO with Deep Learning"* *
+*Repository for the project "Day-Ahead Electricity Price Forecasting on CAISO with Deep Learning"* 
 
 ## Getting "Real-Time" LMP Market Data
 
-* *Install node.js* *
+*Install node.js*
 https://nodejs.org/en/download/
 
 **Install packages**
