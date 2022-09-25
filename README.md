@@ -3,9 +3,13 @@ Repository for the project "Day-Ahead Electricity Price Forecasting on CAISO wit
 
 ## Getting "Real-Time" LMP Market Data
 
-**Download node.js**
+**Install node.js**
+https://nodejs.org/en/download/
+
+**Install packages**
 ```
-cd api && npm install
+cd api
+npm install
 ```
 **Select time-range to download in oasis.js on line 16:**
 ```
