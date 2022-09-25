@@ -26,6 +26,14 @@ async function downloadZip(startdatetime, groupId = 'RTPD_LMP_GRP') {
     const urlWithParams = `${baseUrl}&groupid=${groupId}&startdatetime=${startdatetime}`;
     console.log('downloader:', urlWithParams);
 
+    //Create zip file folder, if it does not already exists
+    const folder = "./zip_files"
+    if (!fs.existsSync(folder)){
+        fs.mkdirSync(folder);
+      
+        console.log('zip_files: Folder Created Successfully.');
+    }
+
     const hourForFileName = startdatetime.split(':')[0].split('T')[1];
     const zipFileName = `./zip_files/${groupId}-T${hourForFileName}.zip`;
 
