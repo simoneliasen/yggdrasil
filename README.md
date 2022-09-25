@@ -11,11 +11,11 @@ cd api && npm install
 ```
 downloadZips(2022, 09, 22, 2022, 09, 23);
 ```
-**or just write in:**
+**Or just write in:**
 ```
 downloadYesterday();
 ```
-**then enter the following in your terminal, to run the script**:
+**Then enter the following in your terminal, to run the script**:
 ```
 node oasis.js
 ```
