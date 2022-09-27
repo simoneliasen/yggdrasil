@@ -23,3 +23,17 @@ downloadYesterday();
 ```
 node oasis.js
 ```
+
+## Data Wrangling API Data, Into Model-input data.
+1. Upload files gotten from the API to google drive (tested with a weeks data)
+2. Open the code from data_wrangling.ipynb in your Google collab
+2. Get id of of folder where your files are
+- Right-click the folder
+- Click Get Link
+- Select substring of the link i.e. "1Fabz0Hz7xSzLZwHFpPrSaxNw4cmPq0vn"
+3. Insert the Folder id in code block number 3: 
+- fileList = drive.ListFile({'q': "'INSERT-ID-OF-FOLDER-HERE' in parents and trashed=false"}).GetList()
+3. Run all code-blocks 
+- when running the first code-block, press allow for colab to get access to your google drive.
+
+*All generated files should be avaliable to you in the left sidepanel, by clicking the folder icon.*
