@@ -27,7 +27,7 @@ node oasis.js
 ## Data Wrangling API Data, Into Model-input data.
 1. Upload files gotten from the API to google drive (tested with a weeks data)
 2. Open the code from data_wrangling.ipynb in your Google collab
-2. Get id of of folder where your files are
+2. Get id of the folder where your files are
 - Right-click the folder
 - Click Get Link
 - Select substring of the link i.e. "1Fabz0Hz7xSzLZwHFpPrSaxNw4cmPq0vn"
