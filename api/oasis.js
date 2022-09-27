@@ -11,9 +11,11 @@ const admZip = require('adm-zip');
 
 
 //Guide:          --start--      --slut--
-// downloadZips(2022, 09, 22, 2022, 09, 23);
+downloadZips(2022, 8, 1, 2022, 8, 8);
 //eller:
-downloadYesterday();
+
+//2022-08-01-2022-08-08
+//downloadYesterday();
 
 //kør: cd api && node oasis.js
 // (den tager ca. 4 min pr. dag der skal hentes.)
