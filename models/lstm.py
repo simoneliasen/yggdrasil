@@ -1,3 +1,9 @@
+from asyncio.windows_events import NULL
+import pandas as pd
+from torch.utils.data import TensorDataset, DataLoader
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import OneHotEncoder
+from sklearn.compose import ColumnTransformer
 from random import shuffle
 import string
 import torch
@@ -5,7 +11,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 import numpy as np
-import matplotlib as plt
+import matplotlib.pyplot as plt
+device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 
 class LSTMModel(nn.Module):
@@ -17,10 +24,8 @@ class LSTMModel(nn.Module):
         self.layer_dim = layer_dim
 
         # LSTM layers
-        self.lstm = nn.LSTM(
-            input_dim, hidden_dim, layer_dim, batch_first=True, dropout=dropout_prob
-        )
-
+        self.lstm = nn.LSTM(input_dim, hidden_dim, layer_dim, batch_first=True, dropout=dropout_prob)
+        
         # Fully connected layer
         self.fc = nn.Linear(hidden_dim, output_dim)
 
@@ -38,20 +43,18 @@ class LSTMModel(nn.Module):
         out = out[:, -1, :]
         # Convert the final state to our desired output shape (batch_size, output_dim)
         out = self.fc(out)
+        return out[:,-1]
 
-        return out
-
-import pandas as pd
-from sklearn.compose import ColumnTransformer
-from sklearn.preprocessing import OneHotEncoder
 
 # load data
 df = pd.read_csv("data/temperature2.csv")
-df.drop(df.columns.difference(['hour','Alturas Temperature Forecast']), 1, inplace=True)
+
+df.drop(columns=df.columns.difference(['hour','Alturas Temperature Forecast']),axis=1,inplace=True)
 df.rename(columns={'Alturas Temperature Forecast':'target'}, inplace=True)
 
 
 df['hour'] = pd.to_datetime(df['hour'], errors='coerce')
+
 
 def one_hot_encode_datetime_column(df, column_name):
     df['day_of_week'] = df[column_name].dt.dayofweek
@@ -59,37 +62,35 @@ def one_hot_encode_datetime_column(df, column_name):
     df['day_of_month'] = df[column_name].dt.day
     df['week_of_year'] = df[column_name].dt.isocalendar().week
     df['hour_of_day'] = df[column_name].dt.hour
-    #drop original datetime column
+    # drop original datetime column
     df.drop(column_name, axis=1, inplace=True)
-    #one-hot encode new columns
-    df = pd.get_dummies(df, columns=['day_of_week','month','day_of_month','week_of_year','hour_of_day'])
+    # one-hot encode new columns
+    df = pd.get_dummies(df, columns=[
+                        'day_of_week', 'month', 'day_of_month', 'week_of_year', 'hour_of_day'])
     return df
 
-df = one_hot_encode_datetime_column(df, 'hour')
-print(df)
 
-from sklearn.model_selection import train_test_split
+df = one_hot_encode_datetime_column(df, 'hour')
+
 
 def feature_label_split(df: pd.DataFrame, target_col: string):
     y = df[target_col]
     x = df.drop(columns=[target_col])
     return x, y
 
-x,y = feature_label_split(df,'target')
 
-def train_test_split(x: pd.DataFrame, y: pd.DataFrame, test_size: float):
-    x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=test_size)
-    return x_train, x_test, y_train, y_test
+x, y = feature_label_split(df, 'target')
 
-x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2,shuffle = False)
 
-from torch.utils.data import TensorDataset, DataLoader
+
+x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, shuffle=False)
+
 batch_size = 64
 
-train_features = torch.Tensor(x_train)
-train_targets = torch.Tensor(y_train)
-test_features = torch.Tensor(x_test)
-test_targets = torch.Tensor(y_test)
+train_features = torch.Tensor(x_train.values)
+train_targets = torch.Tensor(y_train.values)
+test_features = torch.Tensor(x_test.values)
+test_targets = torch.Tensor(y_test.values)
 
 train = TensorDataset(train_features, train_targets)
 test = TensorDataset(test_features, test_targets)
@@ -98,6 +99,7 @@ train_loader = DataLoader(train, batch_size=batch_size, shuffle=False, drop_last
 test_loader = DataLoader(test, batch_size=batch_size, shuffle=False, drop_last=True)
 test_loader_one = DataLoader(test, batch_size=1, shuffle=False, drop_last=True)
 
+import datetime as datetime
 class Optimization:
     def __init__(self, model, loss_fn, optimizer):
         self.model = model
@@ -105,7 +107,7 @@ class Optimization:
         self.optimizer = optimizer
         self.train_losses = []
         self.val_losses = []
-    
+
     def train_step(self, x, y):
         # Sets model to train mode
         self.model.train()
@@ -126,18 +128,90 @@ class Optimization:
         # Returns the loss
         return loss.item()
 
+    def train(self, train_loader: DataLoader, batch_size = 64, n_epochs:int = 50, n_features:int =1):
+        model_path = f'models/test_lstm'
+
+        for epoch in range(1, n_epochs + 1):
+            batch_losses = []
+            for x_batch, y_batch in train_loader:
+                x_batch = x_batch.view([batch_size, -1, n_features]).to(device)
+                y_batch = y_batch.to(device)
+                #print(y_batch)
+                loss = self.train_step(x_batch, y_batch)
+                batch_losses.append(loss)
+            training_loss = np.mean(batch_losses)
+            self.train_losses.append(training_loss)
+
+            """
+            with torch.no_grad():
+                batch_val_losses = []
+                for x_val, y_val in val_loader:
+                    x_val = x_val.view([batch_size, -1, n_features]).to(device)
+                    y_val = y_val.to(device)
+                    self.model.eval()
+                    yhat = self.model(x_val)
+                    val_loss = self.loss_fn(y_val, yhat).item()
+                    batch_val_losses.append(val_loss)
+                validation_loss = np.mean(batch_val_losses)
+                self.val_losses.append(validation_loss)
+            """
+
+            if (epoch <= 10) | (epoch % 50 == 0):
+                print(
+                    f"[{epoch}/{n_epochs}] Training loss: {training_loss:.4f}\t"# Validation loss: {validation_loss:.4f}"
+                )
+
+        torch.save(self.model.state_dict(), model_path)
+
+    def evaluate(self, test_loader, batch_size=1, n_features=1):
+        with torch.no_grad():
+            predictions = []
+            values = []
+            for x_test, y_test in test_loader:
+                x_test = x_test.view([batch_size, -1, n_features]).to(device)
+                y_test = y_test.to(device)
+                self.model.eval()
+                yhat = self.model(x_test)
+                predictions.append(yhat.to(device).detach().numpy())
+                values.append(y_test.to(device).detach().numpy())
+        return predictions, values
 
 
-
-model = LSTMModel()
-criterion = nn.MSELoss()
-optimiser = optim.SGD(model.parameters(), lr=0.8)
-
-
-#train_input = torch.from_numpy(y[3:, :-1]) # (97, 999)
-#train_target = torch.from_numpy(y[3:, 1:]) # (97, 999)
-#test_input = torch.from_numpy(y[:3, :-1]) # (3, 999)
-#test_target = torch.from_numpy(y[:3, 1:]) # (3, 999)
+    def plot_losses(self):
+        
+        plt.plot(self.train_losses, label="Training loss")
+        #plt.plot(self.val_losses, label="Validation loss")
+        plt.legend()
+        plt.title("Losses")
+        plt.show()
+        plt.close()
 
 
-training_loop(4,model,optimiser,criterion,train_input,train_target,test_input,test_target)
+import torch.optim as optim
+
+input_dim = len(x_train.columns)
+output_dim = 1
+hidden_dim = 64
+layer_dim = 1
+batch_size = 64
+dropout = 0
+n_epochs = 10
+learning_rate = 1e-10
+weight_decay = 1e-6
+
+model_params = {'input_dim': input_dim,
+                'hidden_dim' : hidden_dim,
+                'layer_dim' : layer_dim,
+                'output_dim' : output_dim,
+                'dropout_prob' : dropout}
+
+model = LSTMModel(**model_params).to(device)
+
+loss_fn = nn.MSELoss(reduction="mean")
+optimizer = optim.Adam(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
+
+opt = Optimization(model=model, loss_fn=loss_fn, optimizer=optimizer)
+opt.train(train_loader, batch_size=batch_size, n_epochs=n_epochs, n_features=input_dim)
+opt.plot_losses()
+
+predictions, values = opt.evaluate(test_loader_one, batch_size=1, n_features=input_dim)
