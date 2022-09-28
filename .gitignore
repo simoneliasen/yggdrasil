@@ -1,1 +1,7 @@
 data/Normalized Weather Data Yggdrasil-20220922T134908Z-001/
+api/node_modules
+api/.DS_Store
+api/zip_files/.DS_Store
+api/zip_files
+api/csv_files
+.DS_Store
