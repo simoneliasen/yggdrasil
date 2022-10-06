@@ -1,4 +1,5 @@
 from asyncio.windows_events import NULL
+from tkinter.ttk import Style
 import pandas as pd
 from torch.utils.data import TensorDataset, DataLoader
 from sklearn.model_selection import train_test_split
@@ -12,6 +13,7 @@ import torch.nn.functional as F
 import torch.optim as optim
 import numpy as np
 import matplotlib.pyplot as plt
+
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 
@@ -28,8 +30,10 @@ class LSTMModel(nn.Module):
         
         # Fully connected layer
         self.fc = nn.Linear(hidden_dim, output_dim)
+        self.values_assigned = False
 
     def forward(self, x):
+        
         # Initializing hidden state for first input with zeros
         h0 = torch.zeros(self.layer_dim, x.size(0), self.hidden_dim).requires_grad_()
         # Initializing cell state for first input with zeros
@@ -51,7 +55,7 @@ df = pd.read_csv("data/temperature2.csv")
 
 df.drop(columns=df.columns.difference(['hour','Alturas Temperature Forecast']),axis=1,inplace=True)
 df.rename(columns={'Alturas Temperature Forecast':'target'}, inplace=True)
-
+df.dropna(inplace=True)
 
 df['hour'] = pd.to_datetime(df['hour'], errors='coerce')
 
@@ -71,7 +75,7 @@ def one_hot_encode_datetime_column(df, column_name):
 
 
 df = one_hot_encode_datetime_column(df, 'hour')
-
+print(df.columns.size)
 
 def feature_label_split(df: pd.DataFrame, target_col: string):
     y = df[target_col]
@@ -156,7 +160,7 @@ class Optimization:
                 self.val_losses.append(validation_loss)
             """
 
-            if (epoch <= 10) | (epoch % 50 == 0):
+            if (epoch <= n_epochs) | (epoch % 50 == 0):
                 print(
                     f"[{epoch}/{n_epochs}] Training loss: {training_loss:.4f}\t"# Validation loss: {validation_loss:.4f}"
                 )
@@ -192,11 +196,11 @@ import torch.optim as optim
 input_dim = len(x_train.columns)
 output_dim = 1
 hidden_dim = 64
-layer_dim = 1
+layer_dim = 2
 batch_size = 64
 dropout = 0
-n_epochs = 10
-learning_rate = 1e-10
+n_epochs = 100
+learning_rate = 1e-1
 weight_decay = 1e-6
 
 model_params = {'input_dim': input_dim,
@@ -215,3 +219,9 @@ opt.train(train_loader, batch_size=batch_size, n_epochs=n_epochs, n_features=inp
 opt.plot_losses()
 
 predictions, values = opt.evaluate(test_loader_one, batch_size=1, n_features=input_dim)
+
+#plot predictions as dots and values as lines
+plt.plot(values, label='values')
+plt.plot(predictions, label='predictions')
+plt.legend()
+plt.show()
