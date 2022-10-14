@@ -103,7 +103,7 @@ train_loader = DataLoader(train, batch_size=batch_size, shuffle=False, drop_last
 test_loader = DataLoader(test, batch_size=batch_size, shuffle=False, drop_last=True)
 test_loader_one = DataLoader(test, batch_size=1, shuffle=False, drop_last=True)
 
-import datetime as datetime
+
 class Optimization:
     def __init__(self, model, loss_fn, optimizer):
         self.model = model
