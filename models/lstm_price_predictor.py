@@ -3,6 +3,9 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 from collections.abc import Iterable
 
+def txt_to_list(file_dir: str):
+    with open(file_dir) as f:
+        return f.read().splitlines()
 
 
 df = pd.read_csv(r"data\dataset.csv")
@@ -10,6 +13,11 @@ df = pd.read_csv(r"data\dataset.csv")
 df.drop(columns=['hour'],axis=1,inplace=True)
 #df.rename(columns={'Alturas Temperature Forecast':'target'}, inplace=True)
 df.dropna(inplace=True)
+
+print(df['CAISO-SP15 Photovoltaic power Generation Forecast'])
+
+bad_columns = txt_to_list(r"data\caiso_columns.txt")
+df.drop(columns=bad_columns,inplace=True)
 
 #read a txt file with the names of the columns to be used as targets
 with open(r"data\pricepoints.txt") as f:
@@ -25,8 +33,8 @@ x, y = feature_label_split(df, targets)
 
 x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, shuffle=False)
 
-print(x_train['CAISO-SP15 Photovoltaic power Generation Forecast'])
-
+print(x_train.columns)
+print(x_train['BPA Total Hydro Power Generation Forecast'])
 batch_size = 64
 print(x_train.values[0])
 train_features = torch.Tensor(x_train.values)
