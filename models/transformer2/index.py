@@ -19,6 +19,7 @@ try:
     #df = pd.read_csv('FB_raw.csv') # data path of facebook stock price (Apr 2019 - Nov 2020)
 except:
     df = pd.read_csv('data/dataset_newnewnewnew.csv') # data path of facebook stock price (Apr 2019 - Nov 2020)
+    #df = pd.read_csv('models/transformer2/FB_raw.csv') # data path of facebook stock price (Apr 2019 - Nov 2020)
 
 close = np.array(df['EXXONBH_7_N005'])
 print(close)
@@ -31,14 +32,14 @@ csum_logreturn = logreturn.cumsum() # Cumulative sum of log returns, dvs. bare f
 train_data, val_data = get_data(logreturn, 0.6) # 60% train, 40% test split
 model = TransAm().to(device)
 
-batch_size = 250
+batch_size = 2
 criterion = nn.MSELoss() # Loss function
 lr = 0.00005 # learning rate
 
 optimizer = torch.optim.AdamW(model.parameters(), lr=lr)
 scheduler = torch.optim.lr_scheduler.StepLR(optimizer, 1.0, gamma=0.95)
 
-epochs =  150 # Number of epochs
+epochs =  20 # Number of epochs
 
 
 def train(train_data, epoch):
@@ -56,6 +57,7 @@ def train(train_data, epoch):
         optimizer.step()
 
         total_loss += loss.item()
+        length = len(train_data)
         log_interval = int(len(train_data) / batch_size / 5)
         if batch % log_interval == 0 and batch > 0:
             cur_loss = total_loss / log_interval
