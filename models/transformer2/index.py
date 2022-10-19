@@ -24,12 +24,13 @@ except:
 close = np.array(df['EXXONBH_7_N005'])
 print(close)
 logreturn = np.diff(np.log(close)) # Transform closing price to log returns, instead of using min-max scaler
+#np.log takes the log of every value in ar, and np.diff takes the difference between every consecutive pair of values.
 
 csum_logreturn = logreturn.cumsum() # Cumulative sum of log returns, dvs. bare for at nedskalere.
 
 
 # den tager kun close ind, så det skal jo ændres.
-train_data, val_data = get_data(logreturn, 0.6) # 60% train, 40% test split
+train_data, val_data = get_data(logreturn, 0.8) # 60% train, 40% test split
 model = TransAm().to(device)
 
 batch_size = 2
@@ -39,7 +40,7 @@ lr = 0.00005 # learning rate
 optimizer = torch.optim.AdamW(model.parameters(), lr=lr)
 scheduler = torch.optim.lr_scheduler.StepLR(optimizer, 1.0, gamma=0.95)
 
-epochs =  20 # Number of epochs
+epochs =  50 # Number of epochs
 
 
 def train(train_data, epoch):
@@ -79,7 +80,7 @@ def evaluate(eval_model, data_source):
     with torch.no_grad():
         for i in range(0, len(data_source) - 1, eval_batch_size):
             data, targets = get_batch(data_source, i, eval_batch_size)
-            output = eval_model(data)            
+            output = eval_model(data)
             total_loss += len(data[0])* criterion(output, targets).cpu().item()
     return total_loss / len(data_source)
 
@@ -142,4 +143,32 @@ def training_loop():
 
         scheduler.step()
 
-training_loop() 
+training_loop()
+
+
+# til dennis: 
+# det her er det raw data plot:
+fig, axs = plt.subplots(2, 1)
+axs[0].plot(close, color='red')
+axs[0].set_title('Closing Price')
+axs[0].set_ylabel('Close Price')
+axs[0].set_xlabel('Time Steps')
+
+axs[1].plot(csum_logreturn, color='green')
+axs[1].set_title('Cumulative Sum of Log Returns')
+axs[1].set_xlabel('Time Steps')
+
+fig.tight_layout()
+plt.show()
+
+
+
+# og vores værdier fra forecast_seq skal helst kunne tydes nogenlunde lige som.
+# så vi ved om fx 160 er en god eller dårlig pris.
+test_result, truth = forecast_seq(model, val_data)
+plt.plot(np.exp(np.diff(truth)), color='red', alpha=0.7)
+plt.plot(np.exp(np.diff(test_result)), color='blue', linewidth=0.7)
+plt.title('Actual vs Forecast')
+plt.legend(['Actual', 'Forecast'])
+plt.xlabel('Time Steps')
+plt.show()
