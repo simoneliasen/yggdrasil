@@ -1,39 +1,26 @@
-import torch
-import torch.nn as nn
-import torch.optim as optim
-import math
-import numpy as np
-import pandas as pd
-import math
+# kraftigt inspireret af:
+# https://pytorch-forecasting.readthedocs.io/en/stable/tutorials/stallion.html
+from dataloader import get_train_val
+from transformer import get_tft, get_trainer
+from evaluate import evaluate, predict
 
-from utils import get_dataloaders
-from fit import fit, predict
-from Transformer import Transformer
+training, validation = get_train_val()
+batch_size = 128  # set this between 32 to 128
+train_dataloader = training.to_dataloader(train=True, batch_size=batch_size, num_workers=0)
+val_dataloader = validation.to_dataloader(train=False, batch_size=batch_size * 10, num_workers=0)
 
-train_dataloader, val_dataloader, test_dataloader = get_dataloaders()
+trainer = get_trainer()
+tft = get_tft(training)
 
+# fit network
+trainer.fit(
+    tft,
+    train_dataloaders=train_dataloader,
+    val_dataloaders=val_dataloader,
+)
 
-# har jeg husket right shift?
-# TODO: Hvordan træner og tester jeg med denne data?
-# jeg har ikke noget target endnu.
-# følg den her måske https://github.com/pytorch/examples/tree/main/word_language_model 
-
-device = "cuda" if torch.cuda.is_available() else "cpu"
-print('device:', device)
-
-model = nn.Transformer(
-    num_tokens=4, dim_model=8, num_heads=2, num_encoder_layers=3, num_decoder_layers=3, dropout_p=0.1
-).to(device)
-opt = torch.optim.SGD(model.parameters(), lr=0.01)
-loss_fn = nn.CrossEntropyLoss()
-
-train_loss_list, validation_loss_list = fit(model, opt, loss_fn, train_dataloader, val_dataloader, 10, device)
+evaluate(trainer, val_dataloader)
 
 
-for idx, example in enumerate(test_dataloader):
-    result = predict(model, example)
-    print(f"Example {idx}")
-    print(f"Input: {example.view(-1).tolist()[1:-1]}")
-    print(f"Continuation: {result[1:-1]}")
-    print()
-
+# TODO: indsæt vores datasæt
+# TODO: lav predictions

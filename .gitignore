@@ -6,6 +6,8 @@ api/zip_files
 api/csv_files
 .DS_Store
 models/transformer/__pycache__
-models/transformer2/__pycache__/*
+models/transformer4/__pycache__/*
+models/transformer4/lightning_logs/*
+models/transformer/lightning_logs/*
 models/transformer3/
 *.pyc
