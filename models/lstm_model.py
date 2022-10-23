@@ -11,7 +11,7 @@ device = 'cuda' if torch.cuda.is_available() else 'cpu'
 class LSTMModel(nn.Module):
     def __init__(self, input_dim, hidden_dim, layer_dim, output_dim, dropout_prob):
         super(LSTMModel, self).__init__()
-
+        self.output_dim = output_dim
         # Defining the number of layers and the nodes in each layer
         self.hidden_dim = hidden_dim
         self.layer_dim = layer_dim
@@ -22,23 +22,23 @@ class LSTMModel(nn.Module):
         # Fully connected layer
         self.fc = nn.Linear(hidden_dim, output_dim)
         self.values_assigned = False
-
-    def forward(self, x):
         
-        # Initializing hidden state for first input with zeros
-        h0 = torch.zeros(self.layer_dim, x.size(0), self.hidden_dim).requires_grad_()
-        # Initializing cell state for first input with zeros
-        c0 = torch.zeros(self.layer_dim, x.size(0), self.hidden_dim).requires_grad_()
-        # We need to detach as we are doing truncated backpropagation through time (BPTT)
-        # If we don't, we'll backprop all the way to the start even after going through another batch
-        # Forward propagation by passing in the input, hidden state, and cell state into the model
+
+    def forward(self, x, h0, c0):
+        #h0 = torch.zeros(self.layer_dim, x.size(0), self.hidden_dim).requires_grad_()
+        #c0 = torch.zeros(self.layer_dim, x.size(0), self.hidden_dim).requires_grad_()
+        
         out, (hn, cn) = self.lstm(x, (h0.detach(), c0.detach()))
-        # Reshaping the outputs in the shape of (batch_size, seq_length, hidden_size)
-        # so that it can fit into the fully connected layer
-        out = out[:, -1, :]
+        self.h0 = hn
+        self.c0 = cn
+        
+        #out = out[:, -1, :]
         # Convert the final state to our desired output shape (batch_size, output_dim)
         out = self.fc(out)
-        return out[:,-1]
+        if self.output_dim == 1:
+            return out[:,-1]
+        else:
+            return out
 
 class Optimization:
     def __init__(self, model, loss_fn, optimizer):
@@ -48,12 +48,12 @@ class Optimization:
         self.train_losses = []
         self.val_losses = []
 
-    def train_step(self, x, y):
+    def train_step(self, x, y,h0,c0):
         # Sets model to train mode
         self.model.train()
 
         # Makes predictions
-        yhat = self.model(x)
+        yhat = self.model(x,h0,c0)
 
         # Computes loss
         loss = self.loss_fn(y, yhat)
@@ -68,52 +68,39 @@ class Optimization:
         # Returns the loss
         return loss.item()
 
-    def train(self, train_loader: DataLoader, batch_size = 64, n_epochs:int = 50, n_features:int =1, model_path:str = "models/new_model.pt"):
+    def train(self, train_features: torch.Tensor,targets:torch.Tensor, batch_size = 64, n_epochs:int = 50, n_features:int =1, model_path:str = "models/lstm_model.pt"):
         
         for epoch in range(1, n_epochs + 1):
             batch_losses = []
-            for x_batch, y_batch in train_loader:
-                x_batch = x_batch.view([batch_size, -1, n_features]).to(device)
-                y_batch = y_batch.to(device)
-                #print(y_batch)
-                loss = self.train_step(x_batch, y_batch)
-                batch_losses.append(loss)
+            h0 = torch.zeros(self.model.layer_dim, self.model.hidden_dim).requires_grad_().to(device)
+            c0 = torch.zeros(self.model.layer_dim, self.model.hidden_dim).requires_grad_().to(device)
+            loss = self.train_step(train_features, targets,h0,c0)
+            batch_losses.append(loss)
             training_loss = np.mean(batch_losses)
             self.train_losses.append(training_loss)
 
-            """
-            with torch.no_grad():
-                batch_val_losses = []
-                for x_val, y_val in val_loader:
-                    x_val = x_val.view([batch_size, -1, n_features]).to(device)
-                    y_val = y_val.to(device)
-                    self.model.eval()
-                    yhat = self.model(x_val)
-                    val_loss = self.loss_fn(y_val, yhat).item()
-                    batch_val_losses.append(val_loss)
-                validation_loss = np.mean(batch_val_losses)
-                self.val_losses.append(validation_loss)
-            """
-
             if (epoch <= n_epochs) | (epoch % 50 == 0):
                 print(
-                    f"[{epoch}/{n_epochs}] Training loss: {training_loss:.4f}\t"# Validation loss: {validation_loss:.4f}"
+                    f"[{epoch}/{n_epochs}] Training loss: {training_loss:.4f}\t"
                 )
 
         torch.save(self.model.state_dict(), model_path)
+        return (h0,c0)
 
-    def evaluate(self, test_loader, batch_size=1, n_features=1):
+
+    def evaluate(self, test_features, batch_size=1, n_features=1, h0=None,c0=None):
         with torch.no_grad():
             predictions = []
             values = []
-            for x_test, y_test in test_loader:
-                x_test = x_test.view([batch_size, -1, n_features]).to(device)
-                y_test = y_test.to(device)
-                self.model.eval()
-                yhat = self.model(x_test)
-                predictions.append(yhat.to(device).detach().numpy())
-                values.append(y_test.to(device).detach().numpy())
-        return predictions, values
+            if h0 is None:
+                h0 = torch.zeros(self.model.layer_dim, batch_size, self.model.hidden_dim).requires_grad_().to(device)
+            if c0 is None:
+                c0 = torch.zeros(self.model.layer_dim, batch_size, self.model.hidden_dim).requires_grad_().to(device)   
+
+            self.model.eval()
+            yhat = self.model(test_features,h0,c0)
+            predictions = yhat.to(device).detach().numpy()
+        return predictions
 
 
     def plot_losses(self):

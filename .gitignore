@@ -5,3 +5,4 @@ api/zip_files/.DS_Store
 api/zip_files
 api/csv_files
 .DS_Store
+.vscode
