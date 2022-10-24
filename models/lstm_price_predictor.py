@@ -23,7 +23,10 @@ df_features.drop(columns=['hour'],axis=1,inplace=True)
 df_features.interpolate(method='spline', order=1, limit=10, limit_direction='both',inplace=True)
 scaler = MinMaxScaler()
 df_columns = df_features.columns
-df_features[df_columns] = scaler.fit_transform(df_features[df_columns])
+#df_features[df_columns] = scaler.fit_transform(df_features[df_columns])
+df_features = df_features.apply(lambda x: x-x.mean())
+#df_features = (df_features - df_features.mean()) / df_features.std()
+
 #df.dropna(inplace=True)
 
 df_targets = pd.read_csv(r"data\hubs.csv")
@@ -38,7 +41,7 @@ def feature_label_split(df: pd.DataFrame, target_cols):
 x = df_features
 y = df_targets
 
-x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.25, shuffle=False)
+x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.20, shuffle=False)
 
 print(x_train.shape)
 print(x_test.shape)
@@ -48,23 +51,17 @@ train_targets = torch.Tensor(y_train.values)
 test_features = torch.Tensor(x_test.values)
 test_targets = torch.Tensor(y_test.values)
 
-#train = TensorDataset(train_features, train_targets)
-#test = TensorDataset(test_features, test_targets)
 print(train_features.size())
-#train_loader = DataLoader(train, batch_size=batch_size, shuffle=False, drop_last=True)
-#test_loader = DataLoader(test, batch_size=batch_size, shuffle=False, drop_last=True)
-#test_loader_one = DataLoader(test, batch_size=1, shuffle=False, drop_last=True)
-
 
 import torch.optim as optim
 input_dim = len(x_train.columns)
 output_dim = len(y_train.columns)
-hidden_dim = 24
-layer_dim = 2
+hidden_dim = len(x_train.columns)
+layer_dim = 1
 batch_size = batch_size
-dropout = 0.1
-n_epochs = 100
-learning_rate = 0.3
+dropout = 0
+n_epochs = 200
+learning_rate = 0.5
 weight_decay = 1e-6
 
 model_params = {'input_dim': input_dim,
@@ -80,15 +77,13 @@ optimizer = optim.Adam(model.parameters(), lr=learning_rate, weight_decay=weight
 
 opt = Optimization(model=model, loss_fn=loss_fn, optimizer=optimizer)
 #h0,c0 = opt.train(train_loader, batch_size=batch_size, n_epochs=n_epochs, n_features=input_dim)
-h0,c0 = opt.train(train_features,targets=train_targets, batch_size=batch_size, n_epochs=n_epochs, n_features=input_dim)
+hn,cn = opt.train(train_features,targets=train_targets, n_epochs=n_epochs)
 #opt.plot_losses()
+print(hn.detach().numpy())
+print(cn.detach().numpy())
 
 
-def Extract(lst):
-    return [item[0][0] for item in lst]
-
-predictions = opt.evaluate(test_features, batch_size=2, n_features=input_dim, h0=h0, c0=c0)
-
+predictions = opt.evaluate(test_features, h0=hn, c0=cn)
 
 #plot predictions as dots and values as lines
 plt.plot(y_test.values, label='values')
