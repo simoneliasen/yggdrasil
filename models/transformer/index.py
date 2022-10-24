@@ -19,8 +19,8 @@ trainer.fit(
     val_dataloaders=val_dataloader,
 )
 
-evaluate(trainer, val_dataloader)
+predict(trainer, val_dataloader)
+#evaluate(trainer, val_dataloader)
 
-
-# TODO: indsæt vores datasæt
+# TODO: træn og gem
 # TODO: lav predictions

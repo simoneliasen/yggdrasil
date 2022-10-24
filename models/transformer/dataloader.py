@@ -4,82 +4,55 @@ from pytorch_forecasting import TimeSeriesDataSet
 from pytorch_forecasting.data import GroupNormalizer
 import pandas as pd
 
-def get_data():
-    data:pd.DataFrame = get_stallion_data()
+def get_train_val() -> list[TimeSeriesDataSet]:
+    """
+    Henter training og validation dataset.
 
-    # add time index
-    data["time_idx"] = data["date"].dt.year * 12 + data["date"].dt.month
-    data["time_idx"] -= data["time_idx"].min()
-
-    # add additional features
-    data["month"] = data.date.dt.month.astype(str).astype("category")  # categories have be strings
-    data["log_volume"] = np.log(data.volume + 1e-8)
-    data["avg_volume_by_sku"] = data.groupby(["time_idx", "sku"], observed=True).volume.transform("mean")
-    data["avg_volume_by_agency"] = data.groupby(["time_idx", "agency"], observed=True).volume.transform("mean")
-
-    # we want to encode special days as one variable and thus need to first reverse one-hot encoding
-    special_days = [
-        "easter_day",
-        "good_friday",
-        "new_year",
-        "christmas",
-        "labor_day",
-        "independence_day",
-        "revolution_day_memorial",
-        "regional_games",
-        "fifa_u_17_world_cup",
-        "football_gold_cup",
-        "beer_capital",
-        "music_fest",
-    ]
-    data[special_days] = data[special_days].apply(lambda x: x.map({0: "-", 1: x.name})).astype("category")
-    data.sample(10, random_state=521)
-
-    #print(data.describe())
-    return [data, special_days]
-
-def get_train_val():
-    data, special_days = get_data()
+    TODO: tager den al data med, eller skal jeg tilføje/fejrne til fx time_varying_known_reals?
+    """
+    csv_path = "data/hubs3.csv"
+    try:
+        data:pd.DataFrame = pd.read_csv(f'../../{csv_path}')
+    except:
+        data:pd.DataFrame = pd.read_csv(csv_path) # denne kører i debug mode.
+    data['time_idx'] = range(0, len(data))
+    data = data.drop(['hour'], axis=1)
 
     # create dataset and loaders
     max_prediction_length = 6
     max_encoder_length = 24
-    training_cutoff = data["time_idx"].max() - max_prediction_length
 
     training = TimeSeriesDataSet(
-        data[lambda x: x.time_idx <= training_cutoff],
+        data,
         time_idx="time_idx",
-        target="volume",
-        group_ids=["agency", "sku"],
+        target="SP15_MERGED",
+        group_ids=["CAISO-SP15 Wind Power Generation Forecast"],
         min_encoder_length=max_encoder_length // 2,  # keep encoder length long (as it is in the validation set)
         max_encoder_length=max_encoder_length,
         min_prediction_length=1,
         max_prediction_length=max_prediction_length,
-        static_categoricals=["agency", "sku"],
-        static_reals=["avg_population_2017", "avg_yearly_household_income_2017"],
-        time_varying_known_categoricals=["special_days", "month"],
-        variable_groups={"special_days": special_days},  # group of categorical variables can be treated as one variable
-        time_varying_known_reals=["time_idx", "price_regular", "discount_in_percent"],
+        #static_categoricals=["agency", "sku"],
+        #static_reals=["avg_population_2017", "avg_yearly_household_income_2017"],
+        #time_varying_known_categoricals=["special_days", "month"],
+        #variable_groups={"special_days": special_days},  # group of categorical variables can be treated as one variable
+        time_varying_known_reals=["time_idx", "CAISO-SP15 Wind Power Generation Forecast", "CAISO Photovoltaic Power Generation Forecast"], # TODO: måske tilføj alle her?
         time_varying_unknown_categoricals=[],
         time_varying_unknown_reals=[
-            "volume",
-            "log_volume",
-            "industry_volume",
-            "soda_volume",
-            "avg_max_temp",
-            "avg_volume_by_agency",
-            "avg_volume_by_sku",
+            "SP15_MERGED",
+            "NP15_MERGED",
+            "ZP26_MERGED",
         ],
-        target_normalizer=GroupNormalizer(
-            groups=["agency", "sku"], transformation="softplus"
-        ),  # use softplus and normalize by group
+        #target_normalizer=GroupNormalizer(
+        #    groups=["agency", "sku"], transformation="softplus"
+        #),  # use softplus and normalize by group
         add_relative_time_idx=True,
         add_target_scales=True,
         add_encoder_length=True,
+        allow_missing_timesteps=True,
     )
 
     # create validation set (predict=True) which means to predict the last max_prediction_length points in time
     # for each series
-    validation = TimeSeriesDataSet.from_dataset(training, data, predict=True, stop_randomization=True)
+    validation = TimeSeriesDataSet.from_dataset(training, data, predict=True, stop_randomization=True, allow_missing_timesteps=True)
 
     return [training, validation]

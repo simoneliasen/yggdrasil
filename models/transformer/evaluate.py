@@ -19,10 +19,12 @@ def evaluate(trainer, val_dataloader):
     mean_abs_error = (actuals - predictions).abs().mean()
     print("mean abs error:", mean_abs_error)
 
+
 def predict(trainer, val_dataloader):
     best_tft = get_best_tft(trainer)
     # raw predictions are a dictionary from which all kind of information including quantiles can be extracted
     raw_predictions, x = best_tft.predict(val_dataloader, mode="raw", return_x=True)
 
     for idx in range(2):  # plot 10 examples
-        best_tft.plot_prediction(x, raw_predictions, idx=idx, add_loss_to_title=True)
+        plot = best_tft.plot_prediction(x, raw_predictions, idx=idx, add_loss_to_title=True)
+        plot.savefig(f'my_plot{idx}.png')

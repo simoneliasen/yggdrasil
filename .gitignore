@@ -10,5 +10,6 @@ models/transformer/__pycache__
 models/transformer4/__pycache__/*
 models/transformer4/lightning_logs/*
 models/transformer/lightning_logs/*
+lightning_logs/*
 models/transformer3/
 *.pyc
