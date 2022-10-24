@@ -2,9 +2,10 @@ import numpy as np
 from pytorch_forecasting.data.examples import get_stallion_data
 from pytorch_forecasting import TimeSeriesDataSet
 from pytorch_forecasting.data import GroupNormalizer
+import pandas as pd
 
 def get_data():
-    data = get_stallion_data()
+    data:pd.DataFrame = get_stallion_data()
 
     # add time index
     data["time_idx"] = data["date"].dt.year * 12 + data["date"].dt.month
