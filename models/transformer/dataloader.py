@@ -10,7 +10,7 @@ def get_train_val() -> list[TimeSeriesDataSet]:
 
     TODO: tager den al data med, eller skal jeg tilføje/fejrne til fx time_varying_known_reals?
     """
-    csv_path = "data/hubs3.csv"
+    csv_path = "data/hubs4.csv"
     try:
         data:pd.DataFrame = pd.read_csv(f'../../{csv_path}')
     except:
@@ -18,12 +18,16 @@ def get_train_val() -> list[TimeSeriesDataSet]:
     data['time_idx'] = range(0, len(data))
     data = data.drop(['hour'], axis=1)
 
+    print(data.head())
+
     # create dataset and loaders
     max_prediction_length = 6
     max_encoder_length = 24
 
+    training_cutoff = data["time_idx"].max() - max_prediction_length
+
     training = TimeSeriesDataSet(
-        data,
+        data[lambda x: x.time_idx <= training_cutoff],
         time_idx="time_idx",
         target="SP15_MERGED",
         group_ids=["CAISO-SP15 Wind Power Generation Forecast"],

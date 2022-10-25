@@ -1,5 +1,5 @@
 import torch
-from pytorch_forecasting import TemporalFusionTransformer
+from pytorch_forecasting import TemporalFusionTransformer, Baseline
 
 def get_best_tft(trainer):
     # hvis vi har trænet nu, så tager den den.
@@ -22,9 +22,20 @@ def evaluate(trainer, val_dataloader):
 
 def predict(trainer, val_dataloader):
     best_tft = get_best_tft(trainer)
+    print_benchmark("best_tft", best_tft, val_dataloader)
+    print_benchmark("Baseline", Baseline(), val_dataloader)
     # raw predictions are a dictionary from which all kind of information including quantiles can be extracted
     raw_predictions, x = best_tft.predict(val_dataloader, mode="raw", return_x=True)
 
     for idx in range(2):  # plot 10 examples
         plot = best_tft.plot_prediction(x, raw_predictions, idx=idx, add_loss_to_title=True)
-        plot.savefig(f'my_plot{idx}.png')
+        plot.savefig(f'images/my_plot{idx}.png')
+
+def print_benchmark(model_str, model, val_dataloader):
+    """
+    udregner en simpel score så vi kan sammenligne performance.
+    """
+    actuals = torch.cat([y for x, (y, weight) in iter(val_dataloader)])
+    predictions = model.predict(val_dataloader)
+    benchmark = (actuals - predictions).abs().mean().item()
+    print(f"{model_str} score: {benchmark}")
