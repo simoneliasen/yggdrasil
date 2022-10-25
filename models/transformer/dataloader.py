@@ -17,6 +17,7 @@ def get_train_val() -> list[TimeSeriesDataSet]:
         data:pd.DataFrame = pd.read_csv(csv_path) # denne kører i debug mode.
     data['time_idx'] = range(0, len(data))
     data = data.drop(['hour'], axis=1)
+    data['group'] = 0 # vi har kun 1 group, i.e california.
 
     print(data.head())
 
@@ -30,7 +31,7 @@ def get_train_val() -> list[TimeSeriesDataSet]:
         data[lambda x: x.time_idx <= training_cutoff],
         time_idx="time_idx",
         target="SP15_MERGED",
-        group_ids=["CAISO-SP15 Wind Power Generation Forecast"],
+        group_ids=["group"],
         min_encoder_length=max_encoder_length // 2,  # keep encoder length long (as it is in the validation set)
         max_encoder_length=max_encoder_length,
         min_prediction_length=1,

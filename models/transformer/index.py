@@ -21,6 +21,3 @@ tft = get_tft(training)
 
 predict(trainer, val_dataloader)
 #evaluate(trainer, val_dataloader)
-
-# TODO: træn og gem
-# TODO: lav predictions
