@@ -11,6 +11,11 @@ def plot_predictions(predictions:List[List[Tensor]], targets:List[List[Tensor]],
     SP15  val1  val2  val3
     NP15  val4  val5  val6
     ZP26  val7  val8  val9
+
+    Kan importes sådan her:
+    import sys
+    sys.path.append('../../')
+    from utils.plot_predictions import plot_predictions
     """
     for s_idx in range(len(predictions)):
         tmp = predictions[s_idx]
