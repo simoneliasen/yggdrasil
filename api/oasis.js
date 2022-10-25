@@ -11,7 +11,7 @@ const admZip = require('adm-zip');
 
 
 //Guide:          --start--      --slut--
-downloadZips(2022, 8, 1, 2022, 8, 8);
+downloadZips(2022, 7, 1, 2022, 8, 1);
 //eller:
 
 //2022-08-01-2022-08-08
