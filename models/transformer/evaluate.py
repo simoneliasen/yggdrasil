@@ -2,6 +2,10 @@ import torch
 from pytorch_forecasting import TemporalFusionTransformer, Baseline
 import copy
 
+import sys
+sys.path.append('../../')
+from utils.plot_predictions import plot_predictions
+
 def get_best_tft(trainer):
     # hvis vi har trænet nu, så tager den den.
     # ellers så bbrug filen best_weights.ckpt
@@ -31,7 +35,6 @@ def evaluate(trainer, val_dataloader):
 
 def predict(trainer, val_dataloader):
     best_tft = get_best_tft(trainer)
-
     copy_loader = copy.deepcopy(val_dataloader)
 
     ys = []
@@ -39,20 +42,24 @@ def predict(trainer, val_dataloader):
         ys.append(y)
     targets = ys[0]
 
-    ##test:
     predictions = best_tft.predict(val_dataloader)
-    ##
-    print("targets:", targets)
-    print("predictions", predictions)
-    # gammel plot: virker kun for 1 hub!
-    #raw_predictions, x = best_tft.predict(val_dataloader, mode="raw", return_x=True)
 
-    #for i in range(len(x)):
-    #    for idx in range(1):  # plot 1 examples
-    #        plot = best_tft.plot_prediction(x[i], raw_predictions[i], idx=idx, add_loss_to_title=True)
-    #        plot.savefig(f'images/hub{i}: {idx}.png')
+    plot_predictions(predictions, targets)
+    return predictions
+
+
+
+
+
+
+
+
+
 
 def print_benchmarks(best_tft, val_dataloader):
+    """
+    VIRKEDE KUN MED 1 TARGET - SKAL RETTES TIL!
+    """
     print_benchmark("best_tft", best_tft, val_dataloader)
     print_benchmark("Baseline", Baseline(), val_dataloader)
 
