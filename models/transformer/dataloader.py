@@ -1,7 +1,7 @@
 import numpy as np
 from pytorch_forecasting.data.examples import get_stallion_data
 from pytorch_forecasting import TimeSeriesDataSet
-from pytorch_forecasting.data import GroupNormalizer
+from pytorch_forecasting.data.encoders import EncoderNormalizer, MultiNormalizer, TorchNormalizer
 import pandas as pd
 
 def get_train_val() -> list[TimeSeriesDataSet]:
@@ -30,7 +30,7 @@ def get_train_val() -> list[TimeSeriesDataSet]:
     training = TimeSeriesDataSet(
         data[lambda x: x.time_idx <= training_cutoff],
         time_idx="time_idx",
-        target="SP15_MERGED",
+        target=["SP15_MERGED", "NP15_MERGED", "ZP26_MERGED"],
         group_ids=["group"],
         min_encoder_length=max_encoder_length // 2,  # keep encoder length long (as it is in the validation set)
         max_encoder_length=max_encoder_length,
@@ -50,6 +50,9 @@ def get_train_val() -> list[TimeSeriesDataSet]:
         #target_normalizer=GroupNormalizer(
         #    groups=["agency", "sku"], transformation="softplus"
         #),  # use softplus and normalize by group
+        #target_normalizer=MultiNormalizer(
+        #[EncoderNormalizer(), TorchNormalizer()]
+        #),
         add_relative_time_idx=True,
         add_target_scales=True,
         add_encoder_length=True,

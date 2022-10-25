@@ -21,3 +21,7 @@ tft = get_tft(training)
 
 predict(trainer, val_dataloader)
 #evaluate(trainer, val_dataloader)
+
+
+
+# TODO: kig på linje 30 i dataloader: lav rigtigt input.

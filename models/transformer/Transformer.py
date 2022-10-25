@@ -36,7 +36,7 @@ def get_tft(training):
         attention_head_size=1,
         dropout=0.1,
         hidden_continuous_size=8,
-        output_size=7,  # 7 quantiles by default
+        output_size=[7, 7, 7],  # 7 quantiles by default, 3 syv taller fordi vi har 3 hubs! (outputs)
         loss=QuantileLoss(),
         log_interval=10,  # uncomment for learning rate finder and otherwise, e.g. to 10 for logging every 10 batches
         reduce_on_plateau_patience=4,
