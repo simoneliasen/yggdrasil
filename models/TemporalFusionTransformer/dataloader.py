@@ -10,7 +10,7 @@ def get_train_val() -> list[TimeSeriesDataSet]:
 
     TODO: tager den al data med, eller skal jeg tilføje/fejrne til fx time_varying_known_reals?
     """
-    csv_path = "data/hubs4.csv"
+    csv_path = "data/hubs.csv"
     try:
         data:pd.DataFrame = pd.read_csv(f'../../{csv_path}')
     except:
