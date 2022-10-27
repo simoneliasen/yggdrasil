@@ -1,6 +1,6 @@
 import pandas as pd
 
-data = pd.read_csv('dataset_newnewnewnewnewnewnewnew.csv')
+data = pd.read_csv('dataset.csv')
 first_useful_column = 'SP15_MERGED'
 index = data.columns.get_loc(first_useful_column)
 print(data.info())
@@ -12,4 +12,4 @@ combined = with_hour.join(last_columns)
 # fjern nul val række: (time 24)
 combined = combined.dropna()
 
-combined.to_csv('hubs3.csv', index=False)
+combined.to_csv('hubs.csv', index=False)
