@@ -11,7 +11,7 @@ const admZip = require('adm-zip');
 
 
 //Guide:        --start--      --slut--
-downloadZips(2022, 7, 1, 2022, 7, 2);
+downloadZips(2019, 7, 18, 2022, 9, 18);
 
 //kør: cd api && node oasis-hubs.js
 
@@ -24,14 +24,14 @@ async function downloadZip(startdatetime, enddatetime, i, hubName) {
     //inspiration: https://digitaldrummerj.me/node-download-zip-and-extract/
 
     //Create zip file folder, if it does not already exists
-    const folder = "./zip_files"
+    const folder = "../data/market_data/zip_files"
     if (!fs.existsSync(folder)){
         fs.mkdirSync(folder);
       
         console.log('zip_files: Folder Created Successfully.');
     }
 
-    const zipFileName = `./zip_files/${hubName}-${i}.zip`;
+    const zipFileName = `../data/market_data/zip_files/${hubName}-${i}.zip`;
 
     console.log('input start date:', startdatetime);
     console.log('input end   date:', enddatetime);
@@ -68,7 +68,7 @@ async function downloadZip(startdatetime, enddatetime, i, hubName) {
     .pipe(fs.createWriteStream(zipFileName))
     .on('finish', function() {
         var zip = new admZip(zipFileName);
-        zip.extractAllToAsync('./csv_files', true);
+        zip.extractAllToAsync('../data/market_data/csv_files', true);
         console.log('unzipped.');
     });
 
