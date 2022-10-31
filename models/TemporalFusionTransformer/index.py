@@ -13,11 +13,11 @@ trainer = get_trainer()
 tft = get_tft(training)
 
 # fit network
-#trainer.fit(
-#    tft,
-#    train_dataloaders=train_dataloader,
-#    val_dataloaders=val_dataloader,
-#)
+trainer.fit(
+    tft,
+    train_dataloaders=train_dataloader,
+    val_dataloaders=val_dataloader,
+)
 
 predict(trainer, val_dataloader)
 #evaluate(trainer, val_dataloader)
