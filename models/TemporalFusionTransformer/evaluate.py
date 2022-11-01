@@ -1,10 +1,9 @@
 import torch
 from pytorch_forecasting import TemporalFusionTransformer, Baseline
 import copy
-
 import sys
-sys.path.append('../../')
-from utils.plot_predictions import plot_predictions
+
+from plot_predictions import plot_predictions
 
 def get_best_tft(trainer):
     # hvis vi har trænet nu, så tager den den.

@@ -25,6 +25,7 @@ def get_train_val() -> list[TimeSeriesDataSet]:
     max_prediction_length = 6
     max_encoder_length = 24
 
+    time_varying_known_reals = get_time_varying_known_reals(data)
     training_cutoff = data["time_idx"].max() - max_prediction_length
 
     training = TimeSeriesDataSet(
@@ -40,7 +41,7 @@ def get_train_val() -> list[TimeSeriesDataSet]:
         #static_reals=["avg_population_2017", "avg_yearly_household_income_2017"],
         #time_varying_known_categoricals=["special_days", "month"],
         #variable_groups={"special_days": special_days},  # group of categorical variables can be treated as one variable
-        time_varying_known_reals=["time_idx", "CAISO-SP15 Wind Power Generation Forecast", "CAISO Photovoltaic Power Generation Forecast"], # TODO: måske tilføj alle her?
+        time_varying_known_reals=time_varying_known_reals,
         time_varying_unknown_categoricals=[],
         time_varying_unknown_reals=[
             "SP15_MERGED",
@@ -64,3 +65,17 @@ def get_train_val() -> list[TimeSeriesDataSet]:
     validation = TimeSeriesDataSet.from_dataset(training, data, predict=True, stop_randomization=True, allow_missing_timesteps=True)
 
     return [training, validation]
+
+
+def get_time_varying_known_reals(data:pd.DataFrame):
+    """
+    Her henter vi bare alle vores navne på forecasts i et array.
+     - Dvs. alle kolonner i csv'en efter hubsne.
+    """
+    last_hub_column_index = data.columns.get_loc('ZP26_MERGED')
+    print(data.info())
+    rest_columns = data.iloc[:,last_hub_column_index+1:]
+    column_names = list(rest_columns.columns)
+    column_names.remove("group")
+    # tilføj evt. flere her, hvis der er nye features der ikke er kendt på forhånd.
+    return column_names
