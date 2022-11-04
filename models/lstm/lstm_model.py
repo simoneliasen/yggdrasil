@@ -18,7 +18,7 @@ class LSTMModel(nn.Module):
 
         # LSTM layers
         self.lstm = nn.LSTM(input_dim, hidden_dim, layer_dim, dropout=dropout_prob, batch_first=True)
-
+        self.relu = nn.ReLU()
         # Fully connected layer
         self.fc = nn.Linear(hidden_dim, output_dim)
         self.values_assigned = False        
@@ -34,7 +34,7 @@ class LSTMModel(nn.Module):
             c0 = torch.zeros(self.layer_dim, x.size(0), self.hidden_dim).requires_grad_()
         
         out, (hn, cn) = self.lstm(x, (h0.detach(), c0.detach()))
-        out = self.fc(out)
+        out = self.relu(self.fc(out))
         
         if self.output_dim == 1:
             return (out[:,-1],hn,cn)
@@ -89,7 +89,8 @@ class Optimization:
         # Computes loss
         #loss = torch.sqrt(self.loss_fn(y, yhat))
         loss = self.loss_fn(y, yhat)
-
+        if not (loss > 0):
+            print("loss is not > 0")
         # Computes gradients
         loss.backward()
 

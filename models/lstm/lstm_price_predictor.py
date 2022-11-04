@@ -1,62 +1,28 @@
+from turtle import color
 from lstm_model import *
+from lstm_train_test_splitter import lstm_train_test_splitter
 import pandas as pd
 
+def grab_last_batch(hn,dimension,hidden_size):
+    return hn[:,-1,:].reshape(dimension,1,hidden_size)
 
 def txt_to_list(file_dir: str):
     with open(file_dir) as f:
         return f.read().splitlines()
 
-df_features = pd.read_csv(r"data\hubs.csv")
-hubs = txt_to_list(r"data\tradinghubs.txt")
+df_features = pd.read_csv(r"data\\dataset_dropNA.csv")
 
-df_targets = df_features[['SP15_MERGED','NP15_MERGED','ZP26_MERGED']]
-df_features.drop(columns=['SP15_MERGED','NP15_MERGED','ZP26_MERGED'], inplace=True)
-df_features.drop(columns=['hour'],axis=1,inplace=True)
-df_features = df_features.apply(lambda x: x-x.mean())
+df_features = df_features[(df_features.index>np.percentile(df_features.index, 96))]
 
-def feature_label_split(df: pd.DataFrame, target_cols):
-    y = df[target_cols]
-    x = df.drop(columns=target_cols)
-    return x, y
+targets_cols = ['TH_NP15_GEN-APND','TH_SP15_GEN-APND','TH_ZP26_GEN-APND']
 
-x = df_features
-y = df_targets
-
-sequence_length = 48
-batch_size = 1
-
-number_of_rows = len(x.index)
-number_of_batches = number_of_rows / (sequence_length * batch_size)
-
-import math
-number_of_batches = math.floor(number_of_batches)
-
-rows_to_drop = number_of_rows - (sequence_length * batch_size * number_of_batches)
-x = np.array(x.iloc[rows_to_drop: , :].values)
-y = np.array(y.iloc[rows_to_drop: , :].values)
-x_batches = x.reshape(number_of_batches, batch_size, sequence_length, x.shape[1])
-y_batches = y.reshape(number_of_batches, batch_size, sequence_length, y.shape[1])
-
-#TODO Update this to be not just the last batch, but some other thing
-x_train = x_batches[:-1]
-y_train = y_batches[:-1]
-
-x_test = x_batches[-1:]
-y_test = y_batches[-1:]
-
-#x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.20, shuffle=False)
-
-train_features = torch.Tensor(x_train)
-train_targets = torch.Tensor(y_train)
-test_features = torch.Tensor(x_test)
-test_targets = torch.Tensor(y_test)
+x_train, y_train, x_test, y_test = lstm_train_test_splitter(df_features, targets_cols, 24, 1, 24, 1, normalize_features=True)
 
 import torch.optim as optim
-input_dim = len(df_features.columns)
-output_dim = len(df_targets.columns)
+input_dim = x_train.size(dim=3)
+output_dim = y_train.size(dim=3)
 hidden_dim = 128
 layer_dim = 1
-sequence_length = sequence_length
 dropout = 0
 n_epochs = 100
 learning_rate = 0.3
@@ -69,20 +35,21 @@ model_params = {'input_dim': input_dim,
 
 model = LSTMModel(**model_params).to(device)
 
-loss_fn = nn.L1Loss(reduction="mean")
+loss_fn = nn.MSELoss(reduction="mean")
 optimizer = optim.Adam(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
 opt = Optimization(model=model, loss_fn=loss_fn, optimizer=optimizer)
 
-hn,cn = opt.train(train_features,targets=train_targets, n_epochs=n_epochs,forward_hn_cn=True)
+hn,cn = opt.train(train_features=x_train,targets=y_train, n_epochs=n_epochs,forward_hn_cn=True)
 
-predictions = opt.evaluate(test_features,hn,cn)
-loss = opt.calculate_loss(predictions, test_targets)
+predictions = opt.evaluate(x_test,grab_last_batch(hn,layer_dim,hidden_dim),grab_last_batch(cn,layer_dim,hidden_dim))
+loss = opt.calculate_loss(predictions, y_test)
 print(loss)
 
-predictions = predictions.reshape(batch_size*sequence_length,output_dim)
-y_test = y_test.reshape(batch_size*sequence_length,output_dim)
+test_sequence_length = 24
+predictions = predictions.reshape(test_sequence_length,output_dim)
+y_test = y_test.reshape(test_sequence_length,output_dim)
 #plot predictions as dots and values as lines
-plt.plot(y_test, label='values')
-plt.plot(predictions, label='predictions')
+plt.plot(y_test, label=targets_cols)
+plt.plot(predictions, label=targets_cols, linestyle='dashed')
 plt.legend()
 plt.show()
