@@ -2,10 +2,13 @@ import torch
 from pytorch_forecasting import TemporalFusionTransformer, Baseline
 import copy
 import sys
+from pytorch_forecasting import TimeSeriesDataSet
+import pandas as pd
+from dataloader import get_time_varying_known_reals
 
 from plot_predictions import plot_predictions
 
-def get_best_tft(trainer):
+def get_best_tft(trainer) -> TemporalFusionTransformer:
     # hvis vi har trænet nu, så tager den den.
     # ellers så bbrug filen best_weights.ckpt
     # filen kan erstattes løbende af de bedste checkpoints
@@ -45,6 +48,71 @@ def predict(trainer, val_dataloader):
 
     plot_predictions(predictions, targets)
     return predictions
+
+def predict_on_new_data(trainer):
+    """
+    encoder_data er den data som vi kan se tendenser i.
+    Decoder data er vel bare vores forecasts i 6 timesteps uden hub values.
+    """
+    best_tft = get_best_tft(trainer)
+    csv_path = "data/tmp_train.csv"
+    try:
+        data:pd.DataFrame = pd.read_csv(f'../../{csv_path}')
+    except:
+        data:pd.DataFrame = pd.read_csv(csv_path) # denne kører i debug mode.
+    data['time_idx'] = range(0, len(data))
+    data = data.drop(['hour'], axis=1)
+    data['group'] = 0 # vi har kun 1 group, i.e california.
+
+    print(data.head())
+
+    # create dataset and loaders
+    max_prediction_length = 6
+    max_encoder_length = 24
+
+    time_varying_known_reals = get_time_varying_known_reals(data)
+
+    test_dataset = TimeSeriesDataSet(
+        data,
+        time_idx="time_idx",
+        target=[
+            "TH_NP15_GEN-APND",
+            "TH_SP15_GEN-APND",
+            "TH_ZP26_GEN-APND"
+        ],
+        group_ids=["group"],
+        min_encoder_length=max_encoder_length // 2,  # keep encoder length long (as it is in the validation set)
+        max_encoder_length=max_encoder_length,
+        min_prediction_length=1,
+        max_prediction_length=max_prediction_length,
+        #static_categoricals=["agency", "sku"],
+        #static_reals=["avg_population_2017", "avg_yearly_household_income_2017"],
+        #time_varying_known_categoricals=["special_days", "month"],
+        #variable_groups={"special_days": special_days},  # group of categorical variables can be treated as one variable
+        time_varying_known_reals=time_varying_known_reals,
+        time_varying_unknown_categoricals=[],
+        time_varying_unknown_reals=[
+            "TH_NP15_GEN-APND",
+            "TH_SP15_GEN-APND",
+            "TH_ZP26_GEN-APND"
+        ],
+        #target_normalizer=GroupNormalizer(
+        #    groups=["agency", "sku"], transformation="softplus"
+        #),  # use softplus and normalize by group
+        #target_normalizer=MultiNormalizer(
+        #[EncoderNormalizer(), TorchNormalizer()]
+        #),
+        add_relative_time_idx=True,
+        add_target_scales=True,
+        add_encoder_length=True,
+        allow_missing_timesteps=True,
+    )
+
+
+    test_loader = test_dataset.to_dataloader(train=False, batch_size=6, num_workers=0)
+    new_raw_predictions = best_tft.predict(test_loader, mode="prediction")
+    print(new_raw_predictions)
+
 
 
 

@@ -2,7 +2,7 @@
 # https://pytorch-forecasting.readthedocs.io/en/stable/tutorials/stallion.html
 from dataloader import get_train_val
 from transformer import get_tft, get_trainer
-from evaluate import evaluate, predict
+from evaluate import evaluate, predict, predict_on_new_data
 
 training, validation = get_train_val()
 batch_size = 128  # set this between 32 to 128
@@ -19,9 +19,6 @@ trainer.fit(
     val_dataloaders=val_dataloader,
 )
 
+#predict_on_new_data(trainer)
+evaluate(trainer, val_dataloader)
 predict(trainer, val_dataloader)
-#evaluate(trainer, val_dataloader)
-
-
-
-# TODO: kig på linje 30 i dataloader: lav rigtigt input.
