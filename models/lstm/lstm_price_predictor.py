@@ -12,20 +12,30 @@ def txt_to_list(file_dir: str):
 
 df_features = pd.read_csv(r"data\\dataset_dropNA.csv")
 
-df_features = df_features[(df_features.index>np.percentile(df_features.index, 96))]
+df_features = df_features[(df_features.index<np.percentile(df_features.index, 50))]
 
-targets_cols = ['TH_NP15_GEN-APND','TH_SP15_GEN-APND','TH_ZP26_GEN-APND']
+targets_cols = ['TH_NP15_GEN-APND','TH_SP15_GEN-APND', 'TH_ZP26_GEN-APND']
+test_sequence_length = 38
+x_train, y_train, x_test, y_test = lstm_train_test_splitter(df_features, targets_cols, 730, 1, test_sequence_length, 1, normalize_features=True, remove_target_outliers=True)
 
-x_train, y_train, x_test, y_test = lstm_train_test_splitter(df_features, targets_cols, 24, 1, 24, 1, normalize_features=True)
+if torch.cuda.is_available():
+    x_train = torch.Tensor(x_train).cuda()
+    y_train = torch.Tensor(y_train).cuda()
+    x_test = torch.Tensor(x_test).cuda()
+else:
+    x_train = torch.Tensor(x_train)
+    y_train = torch.Tensor(y_train)
+    x_test = torch.Tensor(x_test)
+y_test = torch.Tensor(y_test)
 
 import torch.optim as optim
 input_dim = x_train.size(dim=3)
 output_dim = y_train.size(dim=3)
-hidden_dim = 128
-layer_dim = 1
+hidden_dim = 256
+layer_dim = 2
 dropout = 0
 n_epochs = 100
-learning_rate = 0.3
+learning_rate = 0.001
 weight_decay = 1e-6
 model_params = {'input_dim': input_dim,
                 'hidden_dim' : hidden_dim,
@@ -35,17 +45,20 @@ model_params = {'input_dim': input_dim,
 
 model = LSTMModel(**model_params).to(device)
 
-loss_fn = nn.MSELoss(reduction="mean")
+loss_fn = nn.L1Loss(reduction="mean")
 optimizer = optim.Adam(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
+optimizer = optim.RAdam(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
+#optimizer = optim.SGD(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
+#optimizer = optim.LBFGS(model.parameters(), lr=learning_rate)
+
 opt = Optimization(model=model, loss_fn=loss_fn, optimizer=optimizer)
 
-hn,cn = opt.train(train_features=x_train,targets=y_train, n_epochs=n_epochs,forward_hn_cn=True)
+hn,cn = opt.train(train_features=x_train,targets=y_train, n_epochs=n_epochs,forward_hn_cn=True,plot_losses=True, model_path = "lstm_model.pt")
 
 predictions = opt.evaluate(x_test,grab_last_batch(hn,layer_dim,hidden_dim),grab_last_batch(cn,layer_dim,hidden_dim))
 loss = opt.calculate_loss(predictions, y_test)
 print(loss)
 
-test_sequence_length = 24
 predictions = predictions.reshape(test_sequence_length,output_dim)
 y_test = y_test.reshape(test_sequence_length,output_dim)
 #plot predictions as dots and values as lines

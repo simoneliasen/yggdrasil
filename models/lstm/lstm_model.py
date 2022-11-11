@@ -18,39 +18,43 @@ class LSTMModel(nn.Module):
 
         # LSTM layers
         self.lstm = nn.LSTM(input_dim, hidden_dim, layer_dim, dropout=dropout_prob, batch_first=True)
-        self.relu = nn.ReLU()
         # Fully connected layer
         self.fc = nn.Linear(hidden_dim, output_dim)
         self.values_assigned = False        
+    
+    def create_hidden_states(self, batch_size):
+        if torch.cuda.is_available():
+            h0 = torch.zeros(self.layer_dim, batch_size, self.hidden_dim).requires_grad_().cuda()
+            c0 = torch.zeros(self.layer_dim, batch_size, self.hidden_dim).requires_grad_().cuda()
+        else:
+            h0 = torch.zeros(self.layer_dim, batch_size, self.hidden_dim).requires_grad_()
+            c0 = torch.zeros(self.layer_dim, batch_size, self.hidden_dim).requires_grad_()
+        return (h0, c0)
 
     def forward(self, x, h0=None, c0=None):
         """x format is (batch_size, seq_len, input_dim)
-        
         h0 and c0 can be inputted, they have the size (layer_dim, batch_size, hidden_dim) 
         where layer_dim is the number of stacked lstm's and hidden_dim is the number of nodes in each lstm"""
-        if h0 == None:
-            h0 = torch.zeros(self.layer_dim, x.size(0), self.hidden_dim).requires_grad_()
-        if c0 == None:
-            c0 = torch.zeros(self.layer_dim, x.size(0), self.hidden_dim).requires_grad_()
-        
+        if h0 == None or c0 == None:
+            h0,c0 = self.create_hidden_states(x.size(0))
+
         out, (hn, cn) = self.lstm(x, (h0.detach(), c0.detach()))
-        out = self.relu(self.fc(out))
+        out = self.fc(out)
         
         if self.output_dim == 1:
-            return (out[:,-1],hn,cn)
+            return (out[:,-1,-1],hn,cn)
         else:
             return (out,hn,cn)
 
 class Optimization:
     def __init__(self, model, loss_fn, optimizer):
         self.model = model
+        
         self.loss_fn = loss_fn
         self.optimizer = optimizer
         self.train_losses = []
-        self.val_losses = []
 
-
-    def train(self, train_features: torch.Tensor,targets:torch.Tensor, n_epochs:int = 50, model_path:str = "models/lstm_model.pt", forward_hn_cn:bool = False, plot_losses:bool = False):
+    def train(self, train_features: torch.Tensor,targets:torch.Tensor, n_epochs:int = 50, model_path:str = "lstm_model.pt", forward_hn_cn:bool = False, plot_losses:bool = False):
         """
         Trains the model and saves it to the model_path. The last hidden and cell states are returned.
         if forward_hn_cn is True, the last hidden and cell states are forwarded to the next batch. This is useful for training on sequences, with batchsize of 1.
@@ -59,7 +63,7 @@ class Optimization:
             batch_losses = []
             h0,c0,hn,cn = None,None,None,None
             for train_batch, target_batch in zip(train_features, targets):
-                loss,hn,cn = self.train_step(train_batch, target_batch,h0,c0)
+                loss,hn,cn = self.train_step(train_batch, target_batch, h0, c0)
                 if forward_hn_cn:
                     h0 = hn
                     c0 = cn
@@ -79,18 +83,18 @@ class Optimization:
         torch.save(self.model.state_dict(), model_path)
         return (hn,cn)
 
-    
     def train_step(self, x, y,h0=None,c0=None):
         # Sets model to train mode
         self.model.train()
 
         # Makes predictions
         yhat,hn,cn = self.model(x,h0,c0)
+
         # Computes loss
-        #loss = torch.sqrt(self.loss_fn(y, yhat))
         loss = self.loss_fn(y, yhat)
         if not (loss > 0):
             print("loss is not > 0")
+
         # Computes gradients
         loss.backward()
 
@@ -101,20 +105,20 @@ class Optimization:
         # Returns the loss
         return (loss.item(),hn,cn)
 
-    def flatten(self,l):
-        return [item for sublist in l for item in sublist]
-
     def evaluate(self, test_features, h0=None,c0=None):
         """
         Evaluates the model, by predicting a number of results. 
         It's possible to input the last hidden and cell states of the training data, if the model is trained on sequences.
         """
+        test_features.to(device)
         with torch.no_grad():
             predictions = []
             for test_batch in test_features:
                 self.model.eval()
+                
                 yhat,hn,cn = self.model(test_batch,h0,c0)
-                predictions.append(yhat.to(device).detach().numpy())
+                
+                predictions.append(yhat.cpu().detach().numpy())
         return torch.Tensor(np.array(predictions))
 
     def calculate_loss(self, yhat, targets):
@@ -136,4 +140,3 @@ class Optimization:
         plt.title("Losses")
         plt.show()
         plt.close()
-

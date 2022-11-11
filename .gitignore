@@ -15,3 +15,7 @@ models/TemporalFusionTransformer/lightning_logs/*
 lightning_logs/*
 models/transformer3/
 *.pyc
+models/lstm/__pycache__*
+models/lstm/ffm.ipynb
+models/lstm/lstm_model_old.py
+models/lstm/lstm_old.py
