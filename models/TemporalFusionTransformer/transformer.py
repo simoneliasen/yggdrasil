@@ -8,7 +8,7 @@ from pytorch_lightning.loggers import TensorBoardLogger
 from pytorch_forecasting import TemporalFusionTransformer
 from pytorch_forecasting.metrics import QuantileLoss
 
-def get_trainer():
+def get_trainer() -> pl.Trainer:
     pl.seed_everything(42)
     # train model
     # configure network and trainer
