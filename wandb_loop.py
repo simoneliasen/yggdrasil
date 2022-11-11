@@ -1,5 +1,5 @@
 import pandas as pd
-#til jakob og nicoli"
+#til jakob og nicolai"
 
 #model = et object fra klasserne lstm, tft eller query selector
 wandb_params = { # bare en dummy wandb
