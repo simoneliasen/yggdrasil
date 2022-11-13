@@ -4,6 +4,8 @@ import pandas as pd
 from sklearn.preprocessing import MinMaxScaler
 import math
 import matplotlib.pyplot as plt 
+def grab_last_batch(hn,dimension,hidden_size):
+    return hn[:,-1,:].reshape(dimension,1,hidden_size)
 
 def feature_label_split(df: pd.DataFrame, target_cols) -> tuple[pd.DataFrame,pd.DataFrame]:
     y = df[target_cols]
@@ -28,34 +30,23 @@ def remove_outliers(df):
     df.interpolate(method='spline', order=1, limit=10, limit_direction='both',inplace=True)
     return df
 
+def normalize_dataframe(df):
+    return df.apply(lambda x: x-x.mean())
+
+def differenciate_dataframe(df):
+    return df.diff()
 
 def lstm_train_test_splitter(   df_features: pd.DataFrame, 
-                                target_cols, 
+                                df_targets: pd.DataFrame, 
                                 sequence_length_train: int, 
                                 batch_size_train: int, 
                                 sequence_length_test: int = 24, 
-                                batch_size_test: int = 1,
-                                normalize_features: bool = True,
-                                remove_target_outliers: bool = True):
+                                batch_size_test: int = 1):
     """
     Splits the data into train and test sets. The test set will be the last
     test_size % of the data. The train set will be the remaining data.
-    """
-    
+    """    
     df_features.drop(columns=['hour'], axis=1, inplace=True)
-    df_features, df_targets = feature_label_split(df_features, target_cols)
-
-    if normalize_features:
-        df_features = df_features.apply(lambda x: x-x.mean())    
-        #df_features = df_features.diff()
-        #df_features.dropna(inplace=True)
-        #scaler = MinMaxScaler()
-        #df_features[df_features.columns] = scaler.fit_transform(df_features[df_features.columns])
-
-    if remove_target_outliers:
-        print("removing outliers")
-        df_targets = remove_outliers(df_targets)
-        #df_targets = df_targets.diff()
 
     test_features = df_features.tail(sequence_length_test * batch_size_test)
     test_targets = df_targets.tail(sequence_length_test * batch_size_test)
