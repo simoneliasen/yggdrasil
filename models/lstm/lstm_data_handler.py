@@ -12,6 +12,23 @@ def feature_label_split(df: pd.DataFrame, target_cols) -> tuple[pd.DataFrame,pd.
     x = df.drop(columns=target_cols)
     return x, y
 
+def get_mae_rmse(targets:list[torch.Tensor], predictions:list[torch.Tensor]) -> list[int]:
+    """
+    Tager targets og predictions for de 3 hubs og returnerer gennemsnitlig MAE og RMSE.
+    """
+    maes = []
+    rmses = []
+    for i in range(len(targets)):
+        mean_abs_error = (targets[i] - predictions[i]).abs().mean()
+        mean_squared_error = (targets[i] - predictions[i]).square().mean()
+        root_mean_squared_error = mean_squared_error.sqrt()
+        maes.append(mean_abs_error.item())
+        rmses.append(root_mean_squared_error.item())
+        
+    avg_mae = sum(maes) / len(maes)
+    avg_rmse = sum(rmses) / len(rmses)
+    return avg_mae, avg_rmse
+
 def calculate_excess_rows(df, sequence_length, batch_size):
     number_of_batches = len(df) / (sequence_length * batch_size)
     number_of_batches = math.floor(number_of_batches)
