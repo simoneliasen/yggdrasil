@@ -17,7 +17,7 @@ def get_trainer() -> pl.Trainer:
     logger = TensorBoardLogger("lightning_logs")  # logging results to a tensorboard
 
     trainer = pl.Trainer(
-        max_epochs=1,
+        max_epochs=9999999,
         accelerator="gpu",
         enable_model_summary=True,
         gradient_clip_val=0.1,

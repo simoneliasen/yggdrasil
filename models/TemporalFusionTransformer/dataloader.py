@@ -19,11 +19,13 @@ def get_train_val(data:pd.DataFrame, weekday:int) -> list[TimeSeriesDataSet]:
     max_prediction_length = 39
     max_encoder_length = 24
 
-    # vælg dag til validering:
+    # vælg dag til validering: altså til en rykke en dag
     print("full data shape:", data.shape)
-    weekday_offset = (6 * 24) - weekday * 24 # e.g. for mandags prediction offsetter vi med 6 dage fra søndag. og for søndag offsetter vi 0 dage.
-    weekday_cutoff = data["time_idx"].max() - weekday_offset
-    data = data[lambda x: x.time_idx <= weekday_cutoff]
+    end_weekday_offset = (6 * 24) - weekday * 24 # e.g. for mandags prediction offsetter vi med 6 dage fra søndag. og for søndag offsetter vi 0 dage.
+    end_weekday_cutoff = data["time_idx"].max() - end_weekday_offset
+    start_weekday_cutoff = weekday * 24
+    data = data[lambda x: x.time_idx <= end_weekday_cutoff] # vælger hvor data skal slutte
+    data = data[lambda x: x.time_idx >= start_weekday_cutoff] # vælger hvor data skal starte
     print("weekday", weekday, "shape:", data.shape)
 
     time_varying_known_reals = get_time_varying_known_reals(data)
