@@ -21,6 +21,7 @@ def get_trainer() -> pl.Trainer:
         accelerator="gpu",
         enable_model_summary=True,
         gradient_clip_val=0.1,
+        check_val_every_n_epoch=5,
         limit_train_batches=30,  # coment in for training, running valiation every 30 batches
         # fast_dev_run=True,  # comment in to check that networkor dataset has no serious bugs
         callbacks=[lr_logger, early_stop_callback],
