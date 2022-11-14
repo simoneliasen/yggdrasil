@@ -15,7 +15,7 @@ class TFT:
         predictions = []
         MAEs = []
         RMSEs = []
-        for weekday in range(2):
+        for weekday in range(7):
             training, validation = get_train_val(data, weekday)
             batch_size = 128  # set this between 32 to 128
             train_dataloader = training.to_dataloader(train=True, batch_size=batch_size, num_workers=0)
