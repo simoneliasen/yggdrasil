@@ -4,17 +4,11 @@ from pytorch_forecasting import TimeSeriesDataSet
 from pytorch_forecasting.data.encoders import EncoderNormalizer, MultiNormalizer, TorchNormalizer
 import pandas as pd
 
-def get_train_val() -> list[TimeSeriesDataSet]:
+def get_train_val(data:pd.DataFrame, weekday:int) -> list[TimeSeriesDataSet]:
     """
     Henter training og validation dataset.
-
-    TODO: tager den al data med, eller skal jeg tilføje/fejrne til fx time_varying_known_reals?
     """
-    csv_path = "data/datasetV3.csv"
-    try:
-        data:pd.DataFrame = pd.read_csv(f'../../{csv_path}')
-    except:
-        data:pd.DataFrame = pd.read_csv(csv_path) # denne kører i debug mode.
+
     data['time_idx'] = range(0, len(data))
     data = data.drop(['hour'], axis=1)
     data['group'] = 0 # vi har kun 1 group, i.e california.
@@ -22,8 +16,15 @@ def get_train_val() -> list[TimeSeriesDataSet]:
     print(data.head())
 
     # create dataset and loaders
-    max_prediction_length = 6
+    max_prediction_length = 39
     max_encoder_length = 24
+
+    # vælg dag til validering:
+    print("full data shape:", data.shape)
+    weekday_offset = (6 * 24) - weekday * 24 # e.g. for mandags prediction offsetter vi med 6 dage fra søndag. og for søndag offsetter vi 0 dage.
+    weekday_cutoff = data["time_idx"].max() - weekday_offset
+    data = data[lambda x: x.time_idx <= weekday_cutoff]
+    print("weekday", weekday, "shape:", data.shape)
 
     time_varying_known_reals = get_time_varying_known_reals(data)
     training_cutoff = data["time_idx"].max() - max_prediction_length
@@ -46,7 +47,7 @@ def get_train_val() -> list[TimeSeriesDataSet]:
         group_ids=["group"],
         min_encoder_length=max_encoder_length // 2,  # keep encoder length long (as it is in the validation set)
         max_encoder_length=max_encoder_length,
-        min_prediction_length=1,
+        min_prediction_length=max_prediction_length,
         max_prediction_length=max_prediction_length,
         #static_categoricals=["agency", "sku"],
         #static_reals=["avg_population_2017", "avg_yearly_household_income_2017"],
