@@ -54,7 +54,7 @@ class Optimization:
         self.optimizer = optimizer
         self.train_losses = []
 
-    def train(self, train_features: torch.Tensor,train_targets:torch.Tensor, validation_features:torch.Tensor, validation_targets:torch.Tensor, n_epochs:int = 50, model_path:str = "lstm_model.pt", forward_hn_cn:bool = False, plot_losses:bool = False):
+    def train(self, train_features: torch.Tensor,train_targets:torch.Tensor, validation_features:torch.Tensor, validation_targets:torch.Tensor, n_epochs:int = 50, model_statedict_path:str = "lstm_model.pth", forward_hn_cn:bool = False, plot_losses:bool = False):
         """
         hn,cn = opt.train(train_features=x_train,train_targets=y_train, validation_features=x_test, validation_target=y_test, n_epochs=n_epochs,forward_hn_cn=True,plot_losses=True, model_path = "lstm_model.pt")
         Trains the model and saves it to the model_path. The last hidden and cell states are returned.
@@ -68,7 +68,7 @@ class Optimization:
         epoch = 0
 
         #Load model again efter early stopping
-        #self.model.load_state_dict(torch.load(model_path))
+        self.model.load_state_dict(torch.load(model_statedict_path))
 
         for epoch in range(1, n_epochs + 1):
             batch_losses = []
@@ -103,7 +103,7 @@ class Optimization:
                 else:
                     best_val_loss = loss
                     print('Validation loss:', loss, "best loss so far is:", best_val_loss)   
-                    torch.save(self.model.state_dict(), model_path)
+                    torch.save(self.model.state_dict(), model_statedict_path)
 
                 if trigger_times >= patience:
                     print('Early stopping activated the model performed worse', patience, "times in a row")  
@@ -136,11 +136,14 @@ class Optimization:
         # Returns the loss
         return (loss.item(),hn,cn)
 
-    def evaluate(self, test_features, h0=None,c0=None):
+    def evaluate(self, test_features, h0=None,c0=None,model_statedict_path:str = "lstm_model.pth"):
         """
         Evaluates the model, by predicting a number of results. 
         It's possible to input the last hidden and cell states of the training data, if the model is trained on sequences.
         """
+        
+        self.model.load_state_dict(torch.load(model_statedict_path))
+
         if torch.cuda.is_available():
             test_features.cuda()
         else:
