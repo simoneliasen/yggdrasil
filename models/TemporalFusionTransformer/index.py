@@ -19,7 +19,7 @@ from pytorch_forecasting import TemporalFusionTransformer
 import pytorch_lightning as pl
 
 class TFT:
-    def train(self, data:pd.DataFrame):
+    def train(data:pd.DataFrame, dict):
         tft:TemporalFusionTransformer
         trainer:pl.Trainer = get_trainer()
 
@@ -61,6 +61,3 @@ class TFT:
         data = data.head(1000)
         print(data)
         self.train(data)
-
-test = TFT()
-test.debug()
