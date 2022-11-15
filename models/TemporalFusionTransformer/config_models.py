@@ -9,7 +9,7 @@ class Config:
     hidden_size:int
     attention_heads:int
     encoding_size:int
-    optimizer:Optimizers #måske mere her
+    optimizer:Optimizers
     encoder_length:int
     sequence_length:int
     lr:float
