@@ -63,7 +63,6 @@ def lstm_train_test_splitter(   df_features: pd.DataFrame,
     Splits the data into train and test sets. The test set will be the last
     test_size % of the data. The train set will be the remaining data.
     """    
-    df_features.drop(columns=['hour'], axis=1, inplace=True)
 
     test_features = df_features.tail(sequence_length_test * batch_size_test)
     test_targets = df_targets.tail(sequence_length_test * batch_size_test)
