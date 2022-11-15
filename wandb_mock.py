@@ -16,12 +16,12 @@ from lstm import LSTM
 hyper_dict = Config()
 
 hyper_dict.batch_size = 1
-hyper_dict.hidden_size = 2
+hyper_dict.hidden_size = 128
 hyper_dict.attention_heads = 1
 hyper_dict.encoding_size = 5
-hyper_dict.optimizer = 'rAdam'
+hyper_dict.optimizer = 'adam'
 hyper_dict.encoder_length = 6
-hyper_dict.sequence_length = 536
+hyper_dict.sequence_length = 730
 hyper_dict.lr = 0.0001
 hyper_dict.weight_decay = 0.000001
 hyper_dict.dropout_rate = 0
@@ -31,7 +31,7 @@ hyper_dict.n_decoder_layers = 1
 hyper_dict.days_training_length = 31
 
 
-df_dataset = pd.read_csv(r"data\\datasetV3.csv")
+df_dataset = pd.read_csv(r"data\\dataset_dropNA.csv")
 
 df_dataset = df_dataset[(df_dataset.index<np.percentile(df_dataset.index, 50))]
 
