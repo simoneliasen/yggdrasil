@@ -17,22 +17,22 @@ from evaluate import evaluate, predict, predict_on_new_data, get_best_tft
 import pandas as pd
 from pytorch_forecasting import TemporalFusionTransformer
 import pytorch_lightning as pl
+from config_models import Config
 
 class TFT:
-    def train(data:pd.DataFrame, dict):
+    def train(data:pd.DataFrame, config:Config):
         tft:TemporalFusionTransformer
         trainer:pl.Trainer = get_trainer()
-
         predictions = []
         MAEs = []
         RMSEs = []
         for weekday in range(7):
             training, validation = get_train_val(data, weekday)
-            batch_size = 128  # set this between 32 to 128
+            batch_size = config.batch_size  # set this between 32 to 128
             train_dataloader = training.to_dataloader(train=True, batch_size=batch_size, num_workers=0)
             val_dataloader = validation.to_dataloader(train=False, batch_size=batch_size * 10, num_workers=0)
 
-            tft = get_tft(training) if weekday == 0 else get_best_tft(trainer)
+            tft = get_tft(training, config) if weekday == 0 else get_best_tft(trainer)
 
             # fit network
             trainer.fit(
