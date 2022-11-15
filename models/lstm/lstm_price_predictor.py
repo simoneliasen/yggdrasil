@@ -1,25 +1,20 @@
-from turtle import color
+
 from lstm_model import *
-from lstm_data_handler import lstm_train_test_splitter
+from pytorch_forecasting.optim import Ranger
+from lstm_data_handler import *
 import pandas as pd
 from wandb1 import wandb_initialize
 import wandb
 
 
-def grab_last_batch(hn,dimension,hidden_size):
-    return hn[:,-1,:].reshape(dimension,1,hidden_size)
-
-def txt_to_list(file_dir: str):
-    with open(file_dir) as f:
-        return f.read().splitlines()
-
 df_features = pd.read_csv(r"data\\dataset_dropNA.csv")
 
 df_features = df_features[(df_features.index<np.percentile(df_features.index, 50))]
-
 targets_cols = ['TH_NP15_GEN-APND','TH_SP15_GEN-APND', 'TH_ZP26_GEN-APND']
+df_features,df_targets = feature_label_split(df_features, targets_cols)
+
 test_sequence_length = 38
-x_train, y_train, x_test, y_test = lstm_train_test_splitter(df_features, targets_cols, 730, 1, test_sequence_length, 1, normalize_features=True, remove_target_outliers=True)
+x_train, y_train, x_test, y_test = lstm_train_test_splitter(df_features, df_targets, 730, 1, test_sequence_length, 1)
 
 if torch.cuda.is_available():
     x_train = torch.Tensor(x_train).cuda()
