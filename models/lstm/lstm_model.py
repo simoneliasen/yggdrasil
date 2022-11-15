@@ -5,7 +5,9 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 import numpy as np
-
+from lstm_data_handler import grab_last_batch
+import glob
+import os
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 class LSTMModel(nn.Module):
@@ -54,15 +56,26 @@ class Optimization:
         self.optimizer = optimizer
         self.train_losses = []
 
-    def train(self, train_features: torch.Tensor,targets:torch.Tensor, n_epochs:int = 50, model_path:str = "lstm_model.pt", forward_hn_cn:bool = False, plot_losses:bool = False):
+    def train(self, train_features: torch.Tensor,train_targets:torch.Tensor, validation_features:torch.Tensor, validation_targets:torch.Tensor, n_epochs:int = 50, model_path:str = "lstm_model.pt", forward_hn_cn:bool = False, plot_losses:bool = False):
         """
+        hn,cn = opt.train(train_features=x_train,train_targets=y_train, validation_features=x_test, validation_target=y_test, n_epochs=n_epochs,forward_hn_cn=True,plot_losses=True, model_path = "lstm_model.pt")
         Trains the model and saves it to the model_path. The last hidden and cell states are returned.
         if forward_hn_cn is True, the last hidden and cell states are forwarded to the next batch. This is useful for training on sequences, with batchsize of 1.
         """
+
+        # Early stopping
+        best_val_loss = 9999999999999999999.9
+        patience = 10 #bare til hyper tuning.
+        trigger_times = 0
+        epoch = 0
+
+        #Load model again efter early stopping
+        #self.model.load_state_dict(torch.load(model_path))
+
         for epoch in range(1, n_epochs + 1):
             batch_losses = []
             h0,c0,hn,cn = None,None,None,None
-            for train_batch, target_batch in zip(train_features, targets):
+            for train_batch, target_batch in zip(train_features, train_targets):
                 loss,hn,cn = self.train_step(train_batch, target_batch, h0, c0)
                 if forward_hn_cn:
                     h0 = hn
@@ -77,10 +90,30 @@ class Optimization:
                     f"[{epoch}/{n_epochs}] Training loss: {training_loss:.4f}\t"
                 )
 
+            if epoch % 5 == 0:
+                print("Running Validation")
+                layer_dim = self.model.layer_dim
+                hidden_dim = self.model.hidden_dim
+
+                predictions = self.evaluate(validation_features,grab_last_batch(hn,layer_dim,hidden_dim),grab_last_batch(cn,layer_dim,hidden_dim))
+                loss = self.calculate_loss(predictions, validation_targets)
+
+                if loss >= best_val_loss: #ergo: den nye val er dårligere eller ligeså god
+                    trigger_times += 1
+                    print('Validation loss:', loss, "best loss so far is:", best_val_loss)  
+                    print('Trigger Times:', trigger_times)
+                else:
+                    best_val_loss = loss
+                    print('Validation loss:', loss, "best loss so far is:", best_val_loss)   
+                    torch.save(self.model.state_dict(), model_path)
+
+                if trigger_times >= patience:
+                    print('Early stopping activated the model performed worse', patience, "times in a row")  
+                    break             
+
         if plot_losses:
             self.plot_losses()
-            
-        torch.save(self.model.state_dict(), model_path)
+        
         return (hn,cn)
 
     def train_step(self, x, y,h0=None,c0=None):

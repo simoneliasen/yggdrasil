@@ -19,3 +19,4 @@ models/lstm/__pycache__*
 models/lstm/ffm.ipynb
 models/lstm/lstm_model_old.py
 models/lstm/lstm_old.py
+wandb/
