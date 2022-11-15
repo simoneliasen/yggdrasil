@@ -1,6 +1,17 @@
 # kraftigt inspireret af:
 # https://pytorch-forecasting.readthedocs.io/en/stable/tutorials/stallion.html
-from dataloader import get_train_val
+import tensorflow as tf
+import tensorboard as tb
+tf.io.gfile = tb.compat.tensorflow_stub.io.gfile
+
+import sys
+
+try:
+    from dataloader import get_train_val
+except:
+    # setting path
+    sys.path.append('models/TemporalFusionTransformer/')
+    from dataloader import get_train_val
 from transformer import get_tft, get_trainer
 from evaluate import evaluate, predict, predict_on_new_data, get_best_tft
 import pandas as pd
@@ -8,7 +19,7 @@ from pytorch_forecasting import TemporalFusionTransformer
 import pytorch_lightning as pl
 
 class TFT:
-    def train(self, data:pd.DataFrame):
+    def train(data:pd.DataFrame, dict):
         tft:TemporalFusionTransformer
         trainer:pl.Trainer = get_trainer()
 
@@ -50,6 +61,3 @@ class TFT:
         data = data.head(1000)
         print(data)
         self.train(data)
-
-test = TFT()
-test.debug()
