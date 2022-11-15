@@ -3,14 +3,15 @@ import numpy as np
 from datetime import datetime, timedelta
 import wandb
 from copy import deepcopy
+from models.TemporalFusionTransformer.index import TFT
 #skal være en import
-modelname = 'LSTM'
+
  
 sweep_config = {
     'name': 'navn',
     'method': 'random', #grid, random, bayesian
     'metric': {
-    'name': 'avg_val_loss',
+    'name': 'Total_Average_MAE_Loss',
     'goal': 'minimize'  
         },
     'parameters': {
@@ -78,9 +79,15 @@ def set_hyp_config(modelname):
         #Tænker der skal være noget til optim her, vil gætte på: sweep_config['parameters']['optimizer']['values'] = ['sgd', 'ranger']
  
  
-def wandb_initialize():
-    sweep_id = wandb.sweep(sweep_config, project="Yggdrasil", entity="ygg_monkeys") #todo: dette laver en ny sweep.
-    wandb.agent(sweep_id=sweep_id, function=sweep)
+def wandb_initialize(modelname):
+    #sweep_id = wandb.sweep(sweep_config, project="Yggdrasil", entity="ygg_monkeys") #todo: dette laver en ny sweep.
+    sweep_ids = {
+        "LSTM":"eqb8wzk3", 
+        "Queryselector":"4psx3i0m", 
+        "TFT":"dclk0l69"
+    }
+    print(sweep_ids[modelname])
+    wandb.agent(sweep_id=sweep_ids[modelname], function=sweep, project="Yggdrasil", entity="ygg_monkeys")
     #kan også bruge et specifikt sweep_id, fx f7pvbfd4 (find på wandb under sweeps)
     #wandb.watch(model)
  
@@ -119,7 +126,7 @@ def get_data(dates, traininglength, df_features):
  
 def run(hyper_dick):
  
-        df_features = pd.read_csv(r"data\\dataset_dropNA.csv")
+        df_features = pd.read_csv(r"data\\datasetV3.csv")
         season =  ["Winther", "Spring", "Summer", "Fall"]
         dates = ["2021-01-10 23:00:00", "2021-04-11 23:00:00", "2021-07-11 23:00:00", "2021-10-10 23:00:00" ]
         Total_average_mae_loss = 0
@@ -127,14 +134,20 @@ def run(hyper_dick):
 
         print(hyper_dick.days_training_length)
         print(hyper_dick)
+        wandb.log({"Total_Average_MAE_Loss": 20})
+        wandb.log({f"hej mor": 20})
+        return
+        
+
         for x in range(len(dates)):
             print(len(dates))
             df_season = get_data(dates[x], hyper_dick.days_training_length, df_features) #den her metode skal i lave
+            print(hyper_dick)
  
             if modelname == "LSTM":
-                mae, rmse, predictions, target = model.train(df_season, hyper_dick)
+                mae, rmse, predictions = model.train(df_season, hyper_dick)
             if modelname == "TFT":
-                mae, rmse, predictions, target = model.train(df_season, hyper_dick)
+                mae, rmse, predictions, target = TFT.train(df_season, hyper_dick)
             if modelname == "Queryselector":
                 mae, rmse, predictions, target = model.train(df_season, hyper_dick)
             # train:
@@ -173,7 +186,7 @@ def run(hyper_dick):
 modelnames = ["LSTM", "Queryselector", "TFT"]
 modelname = modelnames[0]
 set_hyp_config(modelname)
-wandb_initialize()
+wandb_initialize(modelname)
 #run("efwef") #modelnavn ++ antallet af dage vi træner/validere på
 
     
