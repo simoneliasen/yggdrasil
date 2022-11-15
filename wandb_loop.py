@@ -115,11 +115,11 @@ def get_data(dates, traininglength, df_features):
     endindex = df_features.index[df_features['hour'] == dates][0]
     
     i = 7
-    error = False
+    timestep_exist = False
     #til at håndtere manglende timesteps i csv
-    while error is False:
+    while timestep_exist is False:
         endate = start_date - timedelta(days= (traininglength+i))
-        error = yolo(df_features, endate)
+        timestep_exist = timestep_check(df_features, endate)
         i += 1
         
     startindex = df_features.index[df_features['hour'] == str(endate)][0]
@@ -128,7 +128,7 @@ def get_data(dates, traininglength, df_features):
    
     return df_season
  
-def yolo(df_features, endate):
+def timestep_check(df_features, endate):
     xx = True
     try:
         df_features.index[df_features['hour'] == str(endate)][0]
@@ -141,7 +141,7 @@ def yolo(df_features, endate):
 def run(hyper_dick):
  
         df_features = pd.read_csv(r"data\\datasetV3.csv")
-        season =  ["Winther", "Spring", "Summer", "Fall"]
+        season =  ["Winter", "Spring", "Summer", "Fall"]
         dates = ["2021-01-10 23:00:00", "2021-04-11 23:00:00", "2021-07-11 23:00:00", "2021-10-10 23:00:00" ]
         Total_average_mae_loss = 0
         Total_average_rmse_loss = 0
@@ -156,12 +156,13 @@ def run(hyper_dick):
                 mae, rmse, predictions = TFT.train(df_season, hyper_dick)
             if modelname == "Queryselector":
                 #simons train method mangler
-                mae, rmse, predictions, target = model.train(df_season, hyper_dick)
+                mae, rmse, predictions = model.train(df_season, hyper_dick)
             # train:
             #  - skal selv have early stopping
             #  - skal retunere mae, rmse, predictions for hver dag i ugen. (Husk at den skal loade den bedste)
             #       - mae, rmse: (1*7).
             #       - predictions: (36*7)
+            # -alle tensors skal være 1d.
             average_mae_season = 0
             average_rmse_season = 0
             for i in range(len(mae)):
@@ -175,17 +176,20 @@ def run(hyper_dick):
  
             Total_average_mae_loss += average_mae_season/7
             Total_average_rmse_loss += average_rmse_season/7
- 
-            notfirst15 = 15
-            coomulator = 39
-            for z in range((len(predictions))):
-                if z == coomulator:
-                    notfirst15 += coomulator
-                    coomulator += coomulator
+           
+            notfirst15 = 14
+            increment1 = 38
+            increment2 = 39
+            #assumed that predctions tensor is 1d.
+            for z in range(15,(len(predictions))):
+
+                if z == increment1:
+                    notfirst15 += increment2
+                    increment1 += increment2
  
                 if z > notfirst15:
                     wandb.log({f"{season[x]}_Predictions": predictions[z]})
-                    wandb.log({f"{season[x]}_Target": target[z]})
+        
        
         wandb.log({"Total_Average_MAE_Loss": Total_average_mae_loss/4})
         wandb.log({"Total_Average_RMSE_Loss": Total_average_rmse_loss/4})
