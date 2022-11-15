@@ -17,10 +17,11 @@ def get_trainer() -> pl.Trainer:
     logger = TensorBoardLogger("lightning_logs")  # logging results to a tensorboard
 
     trainer = pl.Trainer(
-        max_epochs=1000,
-        gpus=0,
+        max_epochs=9999999,
+        accelerator="gpu",
         enable_model_summary=True,
         gradient_clip_val=0.1,
+        check_val_every_n_epoch=5,
         limit_train_batches=30,  # coment in for training, running valiation every 30 batches
         # fast_dev_run=True,  # comment in to check that networkor dataset has no serious bugs
         callbacks=[lr_logger, early_stop_callback],
@@ -36,7 +37,7 @@ def get_tft(training):
         attention_head_size=1,
         dropout=0.1,
         hidden_continuous_size=8,
-        output_size=[7, 7, 7],  # 7 quantiles by default, 3 syv taller fordi vi har 3 hubs! (outputs)
+        output_size=[39, 39, 39],  # 7 quantiles by default, 3 syv taller fordi vi har 3 hubs! (outputs)
         loss=QuantileLoss(),
         log_interval=10,  # uncomment for learning rate finder and otherwise, e.g. to 10 for logging every 10 batches
         reduce_on_plateau_patience=4,

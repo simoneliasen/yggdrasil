@@ -1,9 +1,7 @@
+#Inspired by https://towardsdatascience.com/building-rnn-lstm-and-gru-for-time-series-using-pytorch-a46e5b094e7b
 import torch
 import matplotlib.pyplot as plt 
-from torch.utils.data import TensorDataset, DataLoader
 import torch.nn as nn
-import torch.nn.functional as F
-import torch.optim as optim
 import numpy as np
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -110,7 +108,10 @@ class Optimization:
         Evaluates the model, by predicting a number of results. 
         It's possible to input the last hidden and cell states of the training data, if the model is trained on sequences.
         """
-        test_features.to(device)
+        if torch.cuda.is_available():
+            test_features.cuda()
+        else:
+            test_features.cpu()
         with torch.no_grad():
             predictions = []
             for test_batch in test_features:

@@ -13,27 +13,54 @@ def get_best_tft(trainer) -> TemporalFusionTransformer:
     # ellers så bbrug filen best_weights.ckpt
     # filen kan erstattes løbende af de bedste checkpoints
     best_model_path = trainer.checkpoint_callback.best_model_path
-
-    weights_path = 'best_weights_multi.ckpt'
-    try:
-        path = best_model_path if best_model_path is not '' else weights_path
-        best_tft = TemporalFusionTransformer.load_from_checkpoint(path)
-    except:
-        # kører i debug:
-        path = best_model_path if best_model_path is not '' else f"models/transformer/{weights_path}"
-        best_tft = TemporalFusionTransformer.load_from_checkpoint(path)
-    
+    best_tft = TemporalFusionTransformer.load_from_checkpoint(best_model_path)
     return best_tft
+
+    #weights_path = 'best_weights_multi.ckpt'
+    #try:
+    #    path = best_model_path if best_model_path is not '' else weights_path
+    #    best_tft = TemporalFusionTransformer.load_from_checkpoint(path)
+    #except:
+    #    # kører i debug:
+    #    path = best_model_path if best_model_path is not '' else f"models/transformer/{weights_path}"
+    #    best_tft = TemporalFusionTransformer.load_from_checkpoint(path)
+    
+    #return best_tft
 
 def evaluate(trainer, val_dataloader):
     best_tft = get_best_tft(trainer)
 
-    # calcualte mean absolute error on validation set
-    actuals = torch.cat([y[0] for x, y in iter(val_dataloader)])
-    predictions = best_tft.predict(val_dataloader)
-    mean_abs_error = (actuals - predictions).abs().mean()
-    print("mean abs error:", mean_abs_error)
+    ys = []
+    for x, (y, weight) in iter(val_dataloader):
+        ys.append(y)
+    targets = ys[0]
 
+    predictions = best_tft.predict(val_dataloader)
+
+    avg_mae, avg_rmse = get_mae_rmse(targets, predictions)
+
+    preds_not_as_tensor = []
+    for i in range(len(predictions)):
+        preds_not_as_tensor.append(predictions[i].tolist())
+
+    return preds_not_as_tensor, avg_mae, avg_rmse
+
+def get_mae_rmse(targets:list[torch.Tensor], predictions:list[torch.Tensor]) -> list[int]:
+    """
+    Tager targets og predictions for de 3 hubs og returnerer gennemsnitlig MAE og RMSE.
+    """
+    maes = []
+    rmses = []
+    for i in range(len(targets)):
+        mean_abs_error = (targets[i] - predictions[i]).abs().mean()
+        mean_squared_error = (targets[i] - predictions[i]).square().mean()
+        root_mean_squared_error = mean_squared_error.sqrt()
+        maes.append(mean_abs_error.item())
+        rmses.append(root_mean_squared_error.item())
+        
+    avg_mae = sum(maes) / len(maes)
+    avg_rmse = sum(rmses) / len(rmses)
+    return avg_mae, avg_rmse
 
 def predict(trainer, val_dataloader):
     best_tft = get_best_tft(trainer)
