@@ -5,10 +5,10 @@ import torch.optim as optim
 import torch.cuda as cuda
 from pytorch_forecasting.optim import Ranger
 
-class lstm():
+class LSTM():
     def __init__(self) -> None:
         self.targets_cols = ['TH_NP15_GEN-APND','TH_SP15_GEN-APND', 'TH_ZP26_GEN-APND']
-        self.validation_length = 36
+        self.validation_length = 39
         self.validation_batchsize = 1
 
     def train(self,df: pd.DataFrame, hyper_dict):
