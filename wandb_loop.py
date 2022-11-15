@@ -56,7 +56,7 @@ sweep_config = {
             'values': [1, 2, 4, 8, 16]
         },
         'days_training_length': {
-            'values': [31, 62, 124, 248, 365, 540]
+            'values': [31, 62, 124, 248, 365, 520]
         },
     }
 }
@@ -71,6 +71,7 @@ def set_hyp_config(modelname):
         del sweep_config['parameters']['encoding_size']
         del sweep_config['parameters']['n_encoder_layers']
         del sweep_config['parameters']['n_decoder_layers']
+        sweep_config['parameters']['optimizer']['values'] = ['rAdam', 'adam', 'sgd']
         #Tænker der skal være noget til optim her, vil gætte på: sweep_config['parameters']['optimizer']['values'] = ['rAdam', 'adam']
  
     if modelname == "Queryselector" or modelname == "TFT":
@@ -82,11 +83,10 @@ def set_hyp_config(modelname):
 def wandb_initialize(modelname):
     #sweep_id = wandb.sweep(sweep_config, project="Yggdrasil", entity="ygg_monkeys") #todo: dette laver en ny sweep.
     sweep_ids = {
-        "LSTM":"eqb8wzk3", 
-        "Queryselector":"4psx3i0m", 
-        "TFT":"dclk0l69"
+        "LSTM":"ywympjpq", 
+        "Queryselector":"0srx7ptw", 
+        "TFT":"29snzczn"
     }
-    print(sweep_ids[modelname])
     wandb.agent(sweep_id=sweep_ids[modelname], function=sweep, project="Yggdrasil", entity="ygg_monkeys")
     #kan også bruge et specifikt sweep_id, fx f7pvbfd4 (find på wandb under sweeps)
     #wandb.watch(model)
@@ -103,25 +103,39 @@ def wandb_log_folds_avg(avg_val_acc, avg_val_loss):
  
 def sweep():
     wandb.init(config=sweep_config)
-    print(wandb.config.lr)
     run(wandb.config)
  
  
  
 def get_data(dates, traininglength, df_features):
- 
+
     #to get date as datetime object, so timedelta method can be used.
     start_date = datetime.fromisoformat(dates)
-    #timedelta finds automatic the date x days before
-    endate = start_date - timedelta(days= (traininglength+7))
- 
+    #timedelta finds automatic the date x days before 
     endindex = df_features.index[df_features['hour'] == dates][0]
+    
+    i = 7
+    error = False
+    #til at håndtere manglende timesteps i csv
+    while error is False:
+        endate = start_date - timedelta(days= (traininglength+i))
+        error = yolo(df_features, endate)
+        i += 1
+        
     startindex = df_features.index[df_features['hour'] == str(endate)][0]
  
     df_season = df_features.iloc[startindex:endindex]
    
     return df_season
  
+def yolo(df_features, endate):
+    xx = True
+    try:
+        df_features.index[df_features['hour'] == str(endate)][0]
+    except:
+        xx = False
+
+    return xx
  
  
 def run(hyper_dick):
@@ -133,16 +147,15 @@ def run(hyper_dick):
         Total_average_rmse_loss = 0
 
         for x in range(len(dates)):
-            print(len(dates))
             df_season = get_data(dates[x], hyper_dick.days_training_length, df_features) #den her metode skal i lave
-            print(hyper_dick)
- 
+            
             if modelname == "LSTM":
                 lstm_obj = LSTM()
                 mae, rmse, predictions = lstm_obj.train(df_season, hyper_dick)
             if modelname == "TFT":
-                mae, rmse, predictions, target = TFT.train(df_season, hyper_dick)
+                mae, rmse, predictions = TFT.train(df_season, hyper_dick)
             if modelname == "Queryselector":
+                #simons train method mangler
                 mae, rmse, predictions, target = model.train(df_season, hyper_dick)
             # train:
             #  - skal selv have early stopping
@@ -154,9 +167,9 @@ def run(hyper_dick):
             for i in range(len(mae)):
                 wandb.log({f"{season[x]}_RMSE_loss": rmse[i]})
                 wandb.log({f"{season[x]}_MAE_loss": mae[i]})
-                average_mae_season +=mae
-                average_rmse_season +=rmse
-           
+                average_mae_season += mae[i]
+                average_rmse_season +=rmse[i]
+            print(season[x])
             wandb.log({f"{season[x]}_Average_MAE_Loss": (average_mae_season/7)})
             wandb.log({f"{season[x]}_Average_RMSE_Loss": (average_rmse_season/7)})
  
