@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 import wandb
 from copy import deepcopy
 from models.TemporalFusionTransformer.index import TFT
+from models.lstm.lstm import LSTM
 #skal være en import
 
  
@@ -74,7 +75,6 @@ def set_hyp_config(modelname):
  
     if modelname == "Queryselector" or modelname == "TFT":
         print('speciel setting for: ', modelname)
-        del sweep_config['parameters']['LSTM_layers'] #Fjerner alle LSTM parametre
         del sweep_config['parameters']['sequence_length']
         #Tænker der skal være noget til optim her, vil gætte på: sweep_config['parameters']['optimizer']['values'] = ['sgd', 'ranger']
  
@@ -132,20 +132,14 @@ def run(hyper_dick):
         Total_average_mae_loss = 0
         Total_average_rmse_loss = 0
 
-        print(hyper_dick.days_training_length)
-        print(hyper_dick)
-        wandb.log({"Total_Average_MAE_Loss": 20})
-        wandb.log({f"hej mor": 20})
-        return
-        
-
         for x in range(len(dates)):
             print(len(dates))
             df_season = get_data(dates[x], hyper_dick.days_training_length, df_features) #den her metode skal i lave
             print(hyper_dick)
  
             if modelname == "LSTM":
-                mae, rmse, predictions = model.train(df_season, hyper_dick)
+                lstm_obj = LSTM()
+                mae, rmse, predictions = lstm_obj.train(df_season, hyper_dick)
             if modelname == "TFT":
                 mae, rmse, predictions, target = TFT.train(df_season, hyper_dick)
             if modelname == "Queryselector":
