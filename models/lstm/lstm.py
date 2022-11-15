@@ -10,9 +10,9 @@ class lstm():
         self.targets_cols = ['TH_NP15_GEN-APND','TH_SP15_GEN-APND', 'TH_ZP26_GEN-APND']
         self.validation_length = 36
         self.validation_batchsize = 1
-        self.model = None
 
-    def train(self,df: pd.DataFrame, hyperParams:dict):
+    def train(self,df: pd.DataFrame, hyper_dick):
+        self.model = None
         df_features,df_targets = feature_label_split(df, self.targets_cols)
         
         df_targets = remove_outliers(df_targets)
@@ -70,15 +70,14 @@ class lstm():
 
     def get_optimizer(self,optimizer_name,learning_rate,weight_decay):
         if optimizer_name == "rAdam":
-            return optim.RAdam(model.parameters(),lr=learning_rate, weight_decay=weight_decay)
+            return optim.RAdam(self.model.parameters(),lr=learning_rate, weight_decay=weight_decay)
         elif optimizer_name == "adam":
-            return optim.Adam(model.parameters(),lr=learning_rate, weight_decay=weight_decay)
+            return optim.Adam(self.model.parameters(),lr=learning_rate, weight_decay=weight_decay)
         elif optimizer_name == "sgd":
-            return optim.SGD(model.parameters(),lr=learning_rate, weight_decay=weight_decay)
+            return optim.SGD(self.model.parameters(),lr=learning_rate, weight_decay=weight_decay)
         elif optimizer_name == "ranger":
             raise Exception("Ranger optimizer is not supported yet")
             return Ranger
-
         else:
             raise Exception("Optimizer not found")
 
