@@ -26,7 +26,7 @@ class LSTM():
         days_training_length
         """
         df_features,df_targets = feature_label_split(df, self.targets_cols)
-        df_features = df_features.drop(columns=['hour'], axis=1, inplace=True)
+        df_features = df_features.drop(columns=['hour'], axis=1)
 
         df_targets = remove_outliers(df_targets)
         df_features = normalize_dataframe(df_features)
@@ -56,7 +56,7 @@ class LSTM():
 
             hn,cn = opt.train(x_train,y_train,x_test,y_test,model_statedict_path=model_state_dict_path,forward_hn_cn=True)
             
-            new_predictions = opt.evaluate(x_test,grab_last_batch(hn,hyper_dict.LSTM_layers,hyper_dict.hidden_size),grab_last_batch(cn,hyper_dict.LSTM_layers,hyper_dict.hidden_size),model_statedict_path = model_state_dict_path)
+            new_predictions = opt.evaluate(x_test,grab_last_batch(hn,hyper_dict.LSTM_layers,hyper_dict.hidden_size),grab_last_batch(cn,hyper_dict.LSTM_layers,hyper_dict.hidden_size),model_state_dict_path)
             mae,rmse = get_mae_rmse(new_predictions,y_test)
 
             MAEs.append(mae)
