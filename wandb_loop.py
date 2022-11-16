@@ -98,7 +98,6 @@ def sweep():
  
  
 def get_data(dates, traininglength, df_features):
-    
     #to get date as datetime object, so timedelta method can be used.
     start_date = datetime.fromisoformat(dates)
     #timedelta finds automatic the date x days before 
@@ -139,10 +138,12 @@ def run(hyper_dick):
 
         for x in range(len(dates)):
             df_season = get_data(dates[x], hyper_dick.days_training_length, df_features) #den her metode skal i lave
-            
+
+            print(season[x])
             if modelname == "LSTM":
                 lstm_obj = LSTM()
-                mae, rmse, predictions = lstm_obj.train(df_season, hyper_dick)
+                mae, rmse, predictions, targets = lstm_obj.train(df_season, hyper_dick)
+                #print(predictions, targets)
             if modelname == "TFT":
                 mae, rmse, predictions = TFT.train(df_season, hyper_dick)
             if modelname == "Queryselector":
@@ -157,29 +158,57 @@ def run(hyper_dick):
             average_mae_season = 0
             average_rmse_season = 0
             for i in range(len(mae)):
-                wandb.log({f"{season[x]}_RMSE_loss": rmse[i]}, step = i+1)
-                wandb.log({f"{season[x]}_MAE_loss": mae[i]}, step = i+1)
+                wandb.log({f"{season[x]}_RMSE_loss": rmse[i]})
+                wandb.log({f"{season[x]}_MAE_loss": mae[i]})
                 average_mae_season += mae[i]
                 average_rmse_season +=rmse[i]
-            print(season[x])
+            
             wandb.log({f"{season[x]}_Average_MAE_Loss": (average_mae_season/7)})
             wandb.log({f"{season[x]}_Average_RMSE_Loss": (average_rmse_season/7)})
  
             Total_average_mae_loss += average_mae_season/7
             Total_average_rmse_loss += average_rmse_season/7
            
-            notfirst15 = 14
-            increment1 = 38
-            increment2 = 39
-            #assumed that predctions tensor is 1d.
-            for z in range(15,(len(predictions))):
+            #in case for lstm
+            #for 39h
+            #Kunne nok laves sådan her https://stackoverflow.com/questions/62791942/how-do-i-iterate-over-pytorch-2d-tensors -- hvis tid
+            for z in range(len(predictions)):
+                for y in range(len(predictions[z])):
+                    for q in range(len(predictions[z][y])):                    
+                        for d in range(len(predictions[z][y][q])):
+                            for p in range(len(predictions[z][y][q][d])):
+                                if p == 0:
+                                    wandb.log({f"{season[x]} predictions (39h) Hub: NP15": predictions[z][y][q][d][p], f"{season[x]} targets (39h) Hub: NP15": targets[z][y][q][d][p]})
+                                    
+                                if p == 1:
+                                    wandb.log({f"{season[x]} predictions (39h) Hub: SP15": predictions[z][y][q][d][p], f"{season[x]} targets (39h) Hub: SP15": targets[z][y][q][d][p]})
+                                    
+                                if p == 2:
+                                    wandb.log({f"{season[x]} predictions (39h) Hub: ZP26": predictions[z][y][q][d][p], f"{season[x]} targets (39h) Hub: ZP26": targets[z][y][q][d][p]})
+            #for 24h
+            for z in range(len(predictions)):
+                for y in range(len(predictions[z])):
+                    for q in range(len(predictions[z][y])):                    
+                        for c in range(15, len(predictions[z][y][q])):
+                            for b in range(len(predictions[z][y][q][c])):
+                                if b == 0:
+                                    wandb.log({f"{season[x]} predictions (24h) Hub: NP15": predictions[z][y][q][c][b], f"{season[x]} targets (24h) Hub: NP15": targets[z][y][q][c][b]})
+                                    
+                                if b == 1:
+                                    wandb.log({f"{season[x]} predictions (24h) Hub: SP15": predictions[z][y][q][c][b], f"{season[x]} targets (24h) Hub: SP15": targets[z][y][q][c][b]})
+                                    
+                                if b == 2:
+                                    wandb.log({f"{season[x]} predictions (24h) Hub: ZP26": predictions[z][y][q][c][b], f"{season[x]} targets (24h) Hub: ZP26": targets[z][y][q][c][b]})
+                               
+                               
+            # for z in range(15,(len(predictions))):
 
-                if z == increment1:
-                    notfirst15 += increment2
-                    increment1 += increment2
+            #     if z == increment1:
+            #         notfirst15 += increment2
+            #         increment1 += increment2
  
-                if z > notfirst15:
-                    wandb.log({f"{season[x]}_Predictions": predictions[z]})
+            #     if z > notfirst15:
+            #         wandb.log({f"{season[x]}_Predictions": predictions[z]})
         
        
         wandb.log({"Total_Average_MAE_Loss": Total_average_mae_loss/4})
