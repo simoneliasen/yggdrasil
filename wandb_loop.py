@@ -91,16 +91,6 @@ def wandb_initialize(modelname):
     #kan også bruge et specifikt sweep_id, fx f7pvbfd4 (find på wandb under sweeps)
     #wandb.watch(model)
  
-def wandb_log(train_loss, val_loss, train_acc, val_acc):
-    wandb.log({"train_loss": train_loss})
-    wandb.log({"val_loss": val_loss})
-    wandb.log({"train_acc": train_acc})
-    wandb.log({"val_acc": val_acc})
- 
-def wandb_log_folds_avg(avg_val_acc, avg_val_loss):
-    wandb.log({"avg_val_acc":avg_val_acc})
-    wandb.log({"avg_val_loss":avg_val_loss})
- 
 def sweep():
     wandb.init(config=sweep_config)
     run(wandb.config)
@@ -108,7 +98,7 @@ def sweep():
  
  
 def get_data(dates, traininglength, df_features):
-
+    
     #to get date as datetime object, so timedelta method can be used.
     start_date = datetime.fromisoformat(dates)
     #timedelta finds automatic the date x days before 
@@ -142,6 +132,7 @@ def run(hyper_dick):
  
         df_features = pd.read_csv(r"data\\datasetV3.csv")
         season =  ["Winter", "Spring", "Summer", "Fall"]
+        #
         dates = ["2021-01-10 23:00:00", "2021-04-11 23:00:00", "2021-07-11 23:00:00", "2021-10-10 23:00:00" ]
         Total_average_mae_loss = 0
         Total_average_rmse_loss = 0
@@ -161,13 +152,13 @@ def run(hyper_dick):
             #  - skal selv have early stopping
             #  - skal retunere mae, rmse, predictions for hver dag i ugen. (Husk at den skal loade den bedste)
             #       - mae, rmse: (1*7).
-            #       - predictions: (36*7)
+            #       - predictions: (39*7)
             # -alle tensors skal være 1d.
             average_mae_season = 0
             average_rmse_season = 0
             for i in range(len(mae)):
-                wandb.log({f"{season[x]}_RMSE_loss": rmse[i]})
-                wandb.log({f"{season[x]}_MAE_loss": mae[i]})
+                wandb.log({f"{season[x]}_RMSE_loss": rmse[i]}, step = i+1)
+                wandb.log({f"{season[x]}_MAE_loss": mae[i]}, step = i+1)
                 average_mae_season += mae[i]
                 average_rmse_season +=rmse[i]
             print(season[x])
