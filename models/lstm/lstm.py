@@ -1,3 +1,6 @@
+import sys
+sys.path.append('models/lstm/')
+
 from lstm_model import LSTMModel, Optimization
 from lstm_data_handler import *
 import pandas as pd

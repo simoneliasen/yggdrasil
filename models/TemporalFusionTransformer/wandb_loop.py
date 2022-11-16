@@ -3,8 +3,7 @@ import numpy as np
 from datetime import datetime, timedelta
 import wandb
 from copy import deepcopy
-from models.TemporalFusionTransformer.index import TFT
-from models.lstm.lstm import LSTM
+from index import TFT
 #skal være en import
 
  
@@ -56,7 +55,7 @@ sweep_config = {
             'values': [1, 2, 4, 8, 16]
         },
         'days_training_length': {
-            'values': [31, 62, 124, 248, 365, 520]
+            'values': [31, 62, 124, 248, 365, 540]
         },
     }
 }
@@ -71,7 +70,6 @@ def set_hyp_config(modelname):
         del sweep_config['parameters']['encoding_size']
         del sweep_config['parameters']['n_encoder_layers']
         del sweep_config['parameters']['n_decoder_layers']
-        sweep_config['parameters']['optimizer']['values'] = ['rAdam', 'adam', 'sgd']
         #Tænker der skal være noget til optim her, vil gætte på: sweep_config['parameters']['optimizer']['values'] = ['rAdam', 'adam']
  
     if modelname == "Queryselector" or modelname == "TFT":
@@ -83,10 +81,11 @@ def set_hyp_config(modelname):
 def wandb_initialize(modelname):
     #sweep_id = wandb.sweep(sweep_config, project="Yggdrasil", entity="ygg_monkeys") #todo: dette laver en ny sweep.
     sweep_ids = {
-        "LSTM":"ywympjpq", 
-        "Queryselector":"0srx7ptw", 
-        "TFT":"29snzczn"
+        "LSTM":"eqb8wzk3", 
+        "Queryselector":"4psx3i0m", 
+        "TFT":"7i6gi22q"
     }
+    print(sweep_ids[modelname])
     wandb.agent(sweep_id=sweep_ids[modelname], function=sweep, project="Yggdrasil", entity="ygg_monkeys")
     #kan også bruge et specifikt sweep_id, fx f7pvbfd4 (find på wandb under sweeps)
     #wandb.watch(model)
@@ -103,99 +102,85 @@ def wandb_log_folds_avg(avg_val_acc, avg_val_loss):
  
 def sweep():
     wandb.init(config=sweep_config)
+    print(wandb.config.lr)
     run(wandb.config)
  
  
  
 def get_data(dates, traininglength, df_features):
-
+ 
     #to get date as datetime object, so timedelta method can be used.
     start_date = datetime.fromisoformat(dates)
-    #timedelta finds automatic the date x days before 
+    #timedelta finds automatic the date x days before
+    endate = start_date - timedelta(days= (traininglength+7))
+ 
     endindex = df_features.index[df_features['hour'] == dates][0]
-    
-    i = 7
-    timestep_exist = False
-    #til at håndtere manglende timesteps i csv
-    while timestep_exist is False:
-        endate = start_date - timedelta(days= (traininglength+i))
-        timestep_exist = timestep_check(df_features, endate)
-        i += 1
-        
     startindex = df_features.index[df_features['hour'] == str(endate)][0]
  
     df_season = df_features.iloc[startindex:endindex]
    
     return df_season
  
-def timestep_check(df_features, endate):
-    xx = True
-    try:
-        df_features.index[df_features['hour'] == str(endate)][0]
-    except:
-        xx = False
-
-    return xx
  
  
 def run(hyper_dick):
  
         df_features = pd.read_csv(r"data\\datasetV3.csv")
-        season =  ["Winter", "Spring", "Summer", "Fall"]
+        season =  ["Winther", "Spring", "Summer", "Fall"]
         dates = ["2021-01-10 23:00:00", "2021-04-11 23:00:00", "2021-07-11 23:00:00", "2021-10-10 23:00:00" ]
         Total_average_mae_loss = 0
         Total_average_rmse_loss = 0
 
+        print(hyper_dick.days_training_length)
+        print(hyper_dick)
+        
+
         for x in range(len(dates)):
+            print(len(dates))
             df_season = get_data(dates[x], hyper_dick.days_training_length, df_features) #den her metode skal i lave
-            
+            print(hyper_dick)
+ 
             if modelname == "LSTM":
-                lstm_obj = LSTM()
-                mae, rmse, predictions = lstm_obj.train(df_season, hyper_dick)
-            if modelname == "TFT":
-                mae, rmse, predictions = TFT.train(df_season, hyper_dick)
-            if modelname == "Queryselector":
-                #simons train method mangler
                 mae, rmse, predictions = model.train(df_season, hyper_dick)
+            if modelname == "TFT":
+                mae, rmse, predictions, target = TFT.train(df_season, hyper_dick)
+            if modelname == "Queryselector":
+                mae, rmse, predictions, target = model.train(df_season, hyper_dick)
             # train:
             #  - skal selv have early stopping
             #  - skal retunere mae, rmse, predictions for hver dag i ugen. (Husk at den skal loade den bedste)
             #       - mae, rmse: (1*7).
             #       - predictions: (36*7)
-            # -alle tensors skal være 1d.
             average_mae_season = 0
             average_rmse_season = 0
             for i in range(len(mae)):
                 wandb.log({f"{season[x]}_RMSE_loss": rmse[i]})
                 wandb.log({f"{season[x]}_MAE_loss": mae[i]})
-                average_mae_season += mae[i]
-                average_rmse_season +=rmse[i]
-            print(season[x])
+                average_mae_season +=mae
+                average_rmse_season +=rmse
+           
             wandb.log({f"{season[x]}_Average_MAE_Loss": (average_mae_season/7)})
             wandb.log({f"{season[x]}_Average_RMSE_Loss": (average_rmse_season/7)})
  
             Total_average_mae_loss += average_mae_season/7
             Total_average_rmse_loss += average_rmse_season/7
-           
-            notfirst15 = 14
-            increment1 = 38
-            increment2 = 39
-            #assumed that predctions tensor is 1d.
-            for z in range(15,(len(predictions))):
-
-                if z == increment1:
-                    notfirst15 += increment2
-                    increment1 += increment2
+ 
+            notfirst15 = 15
+            coomulator = 39
+            for z in range((len(predictions))):
+                if z == coomulator:
+                    notfirst15 += coomulator
+                    coomulator += coomulator
  
                 if z > notfirst15:
                     wandb.log({f"{season[x]}_Predictions": predictions[z]})
-        
+                    wandb.log({f"{season[x]}_Target": target[z]})
        
         wandb.log({"Total_Average_MAE_Loss": Total_average_mae_loss/4})
         wandb.log({"Total_Average_RMSE_Loss": Total_average_rmse_loss/4})
  
 modelnames = ["LSTM", "Queryselector", "TFT"]
-modelname = modelnames[0]
+modelname = modelnames[2]
 set_hyp_config(modelname)
 wandb_initialize(modelname)
 #run("efwef") #modelnavn ++ antallet af dage vi træner/validere på
