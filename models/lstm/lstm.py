@@ -44,9 +44,12 @@ class LSTM():
         torch.save(self.model.state_dict(), model_state_dict_path)
 
         predictions = []
+        targets = []
         MAEs = []
         RMSEs = []
         for i in range(7):
+            print(f"")
+            print(f"Training for day {i}")
             df_features_loop = self.offset_dataframe(df_features,i)
             df_targets_loop = self.offset_dataframe(df_targets,i)
 
@@ -65,7 +68,8 @@ class LSTM():
             MAEs.append(mae)
             RMSEs.append(rmse)
             predictions.append(new_predictions)
-        return MAEs, RMSEs, predictions
+            targets.append(y_test)
+        return MAEs, RMSEs, predictions, targets
 
 
     def get_optimizer(self,optimizer_name,learning_rate,weight_decay):
