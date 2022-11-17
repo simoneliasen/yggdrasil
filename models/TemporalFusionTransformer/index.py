@@ -19,6 +19,9 @@ import time
 
 class TFT:
     def train(data:pd.DataFrame, config:Config):
+        return TFT.train2(data, config)
+
+        # det her nede er godt til debug, da det giver bedre info end wandb.
         try:
             return TFT.train2(data, config)
         except Exception as e:
@@ -32,6 +35,7 @@ class TFT:
         tft:TemporalFusionTransformer
         trainer:pl.Trainer = get_trainer()
         predictions = []
+        targets = []
         MAEs = []
         RMSEs = []
         for weekday in range(7):
@@ -49,8 +53,9 @@ class TFT:
                 val_dataloaders=val_dataloader,
             )
 
-            preds, avg_mae, avg_rmse = evaluate(trainer, val_dataloader)
+            preds, tgts, avg_mae, avg_rmse = evaluate(trainer, val_dataloader)
             predictions.append(preds)
+            targets.append(tgts)
             MAEs.append(avg_mae)
             RMSEs.append(avg_rmse)
             print("MAEs:", MAEs)
@@ -58,7 +63,7 @@ class TFT:
         print("predictions final:", predictions)
         print("mae final:", MAEs)
         print("rmse final:", RMSEs)
-        return MAEs, RMSEs, predictions
+        return MAEs, RMSEs, predictions, targets
 
     def debug(self):
         csv_path = "data/datasetV3.csv"

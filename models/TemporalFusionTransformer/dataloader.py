@@ -14,7 +14,6 @@ def get_train_val(data:pd.DataFrame, weekday:int) -> list[TimeSeriesDataSet]:
     data['group'] = 0 # vi har kun 1 group, i.e california.
 
     #print(data.head())
-
     # create dataset and loaders
     max_prediction_length = 39
     max_encoder_length = 24

@@ -41,10 +41,13 @@ def evaluate(trainer, val_dataloader):
     avg_mae, avg_rmse = get_mae_rmse(targets, predictions)
 
     preds_not_as_tensor = []
+    targets_not_as_tensor = []
     for i in range(len(predictions)):
         preds_not_as_tensor.append(predictions[i].tolist())
+        targets_not_as_tensor.append(targets[i].tolist())
 
-    return preds_not_as_tensor, avg_mae, avg_rmse
+    print("targets not as tensor:", targets_not_as_tensor)
+    return preds_not_as_tensor, targets_not_as_tensor, avg_mae, avg_rmse
 
 def get_mae_rmse(targets:list[torch.Tensor], predictions:list[torch.Tensor]) -> list[int]:
     """
