@@ -1,10 +1,7 @@
 # kraftigt inspireret af:
 # https://pytorch-forecasting.readthedocs.io/en/stable/tutorials/stallion.html
-import tensorflow as tf
-import tensorboard as tb
-tf.io.gfile = tb.compat.tensorflow_stub.io.gfile
-
 import sys
+import traceback
 
 try:
     from dataloader import get_train_val
@@ -18,9 +15,20 @@ import pandas as pd
 from pytorch_forecasting import TemporalFusionTransformer
 import pytorch_lightning as pl
 from config_models import Config
+import time
 
 class TFT:
     def train(data:pd.DataFrame, config:Config):
+        try:
+            return TFT.train2(data, config)
+        except Exception as e:
+            # exit gracefully, so wandb logs the problem
+            print("Exception:", e)
+            print(traceback.print_exc(), file=sys.stderr)
+            time.sleep(10)
+            exit(1)
+
+    def train2(data:pd.DataFrame, config:Config):
         tft:TemporalFusionTransformer
         trainer:pl.Trainer = get_trainer()
         predictions = []
@@ -45,6 +53,7 @@ class TFT:
             predictions.append(preds)
             MAEs.append(avg_mae)
             RMSEs.append(avg_rmse)
+            print("MAEs:", MAEs)
 
         print("predictions final:", predictions)
         print("mae final:", MAEs)

@@ -18,7 +18,7 @@ def get_trainer() -> pl.Trainer:
     #logger = TensorBoardLogger("lightning_logs")  # logging results to a tensorboard
 
     trainer = pl.Trainer(
-        max_epochs=1,
+        max_epochs=3,
         accelerator="gpu",
         enable_model_summary=True,
         gradient_clip_val=0.1,
@@ -30,6 +30,8 @@ def get_trainer() -> pl.Trainer:
     return trainer
 
 def get_tft(training, config:Config):
+    optimizer = "RAdam" if config.optimizer == "rAdam" else config.optimizer
+
     tft = TemporalFusionTransformer.from_dataset(
         training,
         learning_rate=config.lr,
@@ -39,7 +41,7 @@ def get_tft(training, config:Config):
         lstm_layers=config.LSTM_layers,
         dropout=config.dropout_rate,
         weight_decay=config.weight_decay,
-        optimizer=config.optimizer,
+        optimizer=optimizer,
         output_size=[39, 39, 39],  # 7 quantiles by default, 3 syv taller fordi vi har 3 hubs! (outputs)
         loss=QuantileLoss(),
         log_interval=10,  # uncomment for learning rate finder and otherwise, e.g. to 10 for logging every 10 batches

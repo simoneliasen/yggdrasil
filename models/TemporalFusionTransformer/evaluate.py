@@ -13,6 +13,7 @@ def get_best_tft(trainer) -> TemporalFusionTransformer:
     # ellers så bbrug filen best_weights.ckpt
     # filen kan erstattes løbende af de bedste checkpoints
     best_model_path = trainer.checkpoint_callback.best_model_path
+    #print("best model path:", best_model_path)
     best_tft = TemporalFusionTransformer.load_from_checkpoint(best_model_path)
     return best_tft
 
