@@ -54,7 +54,7 @@ class Optimization:
         self.optimizer = optimizer
         self.train_losses = []
 
-    def train(self, train_features: torch.Tensor,train_targets:torch.Tensor, validation_features:torch.Tensor, validation_targets:torch.Tensor, n_epochs:int = 10000, model_statedict_path:str = "lstm_model.pth", forward_hn_cn:bool = False, plot_losses:bool = False):
+    def train(self, train_features: torch.Tensor,train_targets:torch.Tensor, validation_features:torch.Tensor, validation_targets:torch.Tensor, n_epochs:int = 100000, model_statedict_path:str = "lstm_model.pth", forward_hn_cn:bool = False, plot_losses:bool = False):
         """
         hn,cn = opt.train(train_features=x_train,train_targets=y_train, validation_features=x_test, validation_target=y_test, n_epochs=n_epochs,forward_hn_cn=True,plot_losses=True, model_path = "lstm_model.pt")
         Trains the model and saves it to the model_path. The last hidden and cell states are returned.
@@ -103,6 +103,7 @@ class Optimization:
                     print('Trigger Times:', trigger_times)
                 else:
                     best_val_loss = loss
+                    trigger_times = 0
                     print('Validation loss:', loss, "best loss so far is:", best_val_loss)   
                     torch.save(self.model.state_dict(), model_statedict_path)
 

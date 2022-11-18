@@ -1,10 +1,7 @@
 # kraftigt inspireret af:
 # https://pytorch-forecasting.readthedocs.io/en/stable/tutorials/stallion.html
-import tensorflow as tf
-import tensorboard as tb
-tf.io.gfile = tb.compat.tensorflow_stub.io.gfile
-
 import sys
+import traceback
 
 try:
     from dataloader import get_train_val
@@ -18,12 +15,27 @@ import pandas as pd
 from pytorch_forecasting import TemporalFusionTransformer
 import pytorch_lightning as pl
 from config_models import Config
+import time
 
 class TFT:
     def train(data:pd.DataFrame, config:Config):
+        return TFT.train2(data, config)
+
+        # det her nede er godt til debug, da det giver bedre info end wandb.
+        try:
+            return TFT.train2(data, config)
+        except Exception as e:
+            # exit gracefully, so wandb logs the problem
+            print("Exception:", e)
+            print(traceback.print_exc(), file=sys.stderr)
+            time.sleep(10)
+            exit(1)
+
+    def train2(data:pd.DataFrame, config:Config):
         tft:TemporalFusionTransformer
         trainer:pl.Trainer = get_trainer()
         predictions = []
+        targets = []
         MAEs = []
         RMSEs = []
         for weekday in range(7):
@@ -41,15 +53,17 @@ class TFT:
                 val_dataloaders=val_dataloader,
             )
 
-            preds, avg_mae, avg_rmse = evaluate(trainer, val_dataloader)
+            preds, tgts, avg_mae, avg_rmse = evaluate(trainer, val_dataloader)
             predictions.append(preds)
+            targets.append(tgts)
             MAEs.append(avg_mae)
             RMSEs.append(avg_rmse)
+            print("MAEs:", MAEs)
 
         print("predictions final:", predictions)
         print("mae final:", MAEs)
         print("rmse final:", RMSEs)
-        return MAEs, RMSEs, predictions
+        return MAEs, RMSEs, predictions, targets
 
     def debug(self):
         csv_path = "data/datasetV3.csv"

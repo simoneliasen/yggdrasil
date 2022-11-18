@@ -13,14 +13,13 @@ def get_train_val(data:pd.DataFrame, weekday:int) -> list[TimeSeriesDataSet]:
     data = data.drop(['hour'], axis=1)
     data['group'] = 0 # vi har kun 1 group, i.e california.
 
-    print(data.head())
-
+    #print(data.head())
     # create dataset and loaders
     max_prediction_length = 39
     max_encoder_length = 24
 
     # vælg dag til validering: altså til en rykke en dag
-    print("full data shape:", data.shape)
+    #print("full data shape:", data.shape)
     end_weekday_offset = (6 * 24) - weekday * 24 # e.g. for mandags prediction offsetter vi med 6 dage fra søndag. og for søndag offsetter vi 0 dage.
     end_weekday_cutoff = data["time_idx"].max() - end_weekday_offset
     start_weekday_cutoff = weekday * 24
@@ -87,7 +86,7 @@ def get_time_varying_known_reals(data:pd.DataFrame):
      - Dvs. alle kolonner i csv'en efter hubsne.
     """
     last_hub_column_index = data.columns.get_loc('TH_ZP26_GEN-APND')
-    print(data.info())
+    #print(data.info())
     rest_columns = data.iloc[:,last_hub_column_index+1:]
     column_names = list(rest_columns.columns)
     column_names.remove("group")
