@@ -60,7 +60,12 @@ class LSTM():
             loss_function = torch.nn.L1Loss()
             opt = Optimization(model=self.model, loss_fn=loss_function, optimizer=optimizer)
 
-            hn,cn = opt.train(x_train,y_train,x_test,y_test,model_statedict_path=model_state_dict_path,forward_hn_cn=True)
+            if hyper_dict.batch_size > 1:
+                forward_hidden_states = False
+            else:
+                forward_hidden_states = True
+
+            hn,cn = opt.train(x_train,y_train,x_test,y_test,model_statedict_path=model_state_dict_path,forward_hn_cn=forward_hidden_states)
             
             new_predictions = opt.evaluate(x_test,grab_last_batch(hn,hyper_dict.LSTM_layers,hyper_dict.hidden_size),grab_last_batch(cn,hyper_dict.LSTM_layers,hyper_dict.hidden_size),model_state_dict_path)
             mae,rmse = get_mae_rmse(new_predictions,y_test)
