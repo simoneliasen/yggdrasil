@@ -12,7 +12,7 @@ def feature_label_split(df: pd.DataFrame, target_cols):
     x = df.drop(columns=target_cols)
     return x, y
 
-def get_mae_rmse(targets:list[torch.Tensor], predictions:list[torch.Tensor]) -> list[int]:
+def get_mae_rmse(targets:list[torch.Tensor], predictions:list[torch.Tensor]):
     """
     Tager targets og predictions for de 3 hubs og returnerer gennemsnitlig MAE og RMSE.
     """
