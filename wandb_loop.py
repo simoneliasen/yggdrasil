@@ -132,7 +132,6 @@ def run(hyper_dick):
  
         df_features = pd.read_csv(r"data\\datasetV3.csv")
         season =  ["Winter", "Spring", "Summer", "Fall"]
-        #
         dates = ["2021-01-10 23:00:00", "2021-04-11 23:00:00", "2021-07-11 23:00:00", "2021-10-10 23:00:00" ]
         Total_average_mae_loss = 0
         Total_average_rmse_loss = 0
@@ -156,6 +155,7 @@ def run(hyper_dick):
             if modelname == "Queryselector":
                 #simons train method mangler
                 mae, rmse, predictions = model.train(df_season, hyper_dick)
+                7*3*39
 
             Mae_Season_list.append(mae)
             RMSE_Season_list.append(rmse)  
@@ -180,62 +180,93 @@ def run(hyper_dick):
             Total_average_mae_loss += average_mae_season/7
             Total_average_rmse_loss += average_rmse_season/7
            
-            #in case for lstm
-            #for 39h
-            #Kunne nok laves sådan her https://stackoverflow.com/questions/62791942/how-do-i-iterate-over-pytorch-2d-tensors -- hvis tid
-            targetshub1= []
-            targetshub2= []
-            targetshub3= []
-            predhub1 = []
-            predhub2= []
-            predhub3= []
-            for z in range(len(predictions)):
-              for y in range(len(predictions[z])):
-                   for q in range(len(predictions[z][y])):                    
-                        for d in range(len(predictions[z][y][q])):
-                           for p in range(len(predictions[z][y][q][d])):
-                                if p == 0:                                
-                                    targetshub1.append(targets[z][y][q][d][p])
-                                    predhub1.append(predictions[z][y][q][d][p])
-                                if p == 1:
-                                    targetshub2.append(targets[z][y][q][d][p])
-                                    predhub2.append(predictions[z][y][q][d][p])
-                                if p == 2:
-                                    targetshub3.append(targets[z][y][q][d][p])
-                                    predhub3.append(predictions[z][y][q][d][p])
+            #in case for lstm, which returns a five dimensional tensor....
+            if modelname == "LSTM":
+                targetshub1= []
+                targetshub2= []
+                targetshub3= []
+                predhub1 = []
+                predhub2= []
+                predhub3= []
+                for z in range(len(predictions)):
+                    for y in range(len(predictions[z])):
+                        for q in range(len(predictions[z][y])):                    
+                                for d in range(len(predictions[z][y][q])):
+                                    for p in range(len(predictions[z][y][q][d])):
+                                            if p == 0:                                
+                                                targetshub1.append(targets[z][y][q][d][p])
+                                                predhub1.append(predictions[z][y][q][d][p])
+                                            if p == 1:
+                                                targetshub2.append(targets[z][y][q][d][p])
+                                                predhub2.append(predictions[z][y][q][d][p])
+                                            if p == 2:
+                                                targetshub3.append(targets[z][y][q][d][p])
+                                                predhub3.append(predictions[z][y][q][d][p])
 
-            targets_season.append(targetshub1) 
-            targets_season.append(targetshub2)
-            targets_season.append(targetshub3)
-            predictions_season.append(predhub1)
-            predictions_season.append(predhub2)
-            predictions_season.append(predhub3)
+                targets_season.append(targetshub1) 
+                targets_season.append(targetshub2)
+                targets_season.append(targetshub3)
+                predictions_season.append(predhub1)
+                predictions_season.append(predhub2)
+                predictions_season.append(predhub3)
+            else:
+
+                #assumed that TFT and queryselecters outputs the same 
+                targetshub1= []
+                targetshub2= []
+                targetshub3= []
+                predhub1 = []
+                predhub2= []
+                predhub3= []
+                #input 7*3*39
+                #output 12*273 (3 hubs hver sæson = 3*4, og 7 dage = 7*39)
+                for x in range(len(predictions)):
+                    for y in range(len(predictions[x])):
+                        if y == 0:
+                            targetshub1 = targetshub1 + predictions[x][y]
+                            predhub1 = predhub1 + targets[x][y]
+                        if y == 1:
+                            targetshub2 = targetshub2 + predictions[x][y]
+                            predhub2 = predhub2 + targets[x][y]
+                        if y == 2:
+                            targetshub3 = targetshub3 + predictions[x][y]
+                            predhub3 = predhub3 + targets[x][y]
+                targets_season.append(targetshub1) 
+                targets_season.append(targetshub2)
+                targets_season.append(targetshub3)
+                predictions_season.append(predhub1)
+                predictions_season.append(predhub2)
+                predictions_season.append(predhub3)
+
+
+                
         
+        #for 24h interval pred and target, has to jumper over  timesteps for each 39h preds/targets...
+        #sidenote in order to add mutiple things for the same step in wandb, they have to be added in the same wandb.log statement
+        #why you see the ridiculous long wandb.log() statement at line 256 and 260
         notfirst15 = 14
         stepmove1 = 39
         stepmove2 = 39
         for f in range(len(targets_season[0])):
-            print(len(targets_season[0]))
-            print(len(targets_season))
+
             if f == stepmove2:
                 notfirst15+=stepmove1
                 stepmove2 += stepmove1
 
-
             if f > notfirst15:
                 wandb.log({f"{season[0]} predictions (24h) Hub: NP15": predictions_season[0][f], f"{season[0]} targets (24h) Hub: NP15": targets_season[0][f], f"{season[0]} predictions (24h) Hub: SP15": predictions_season[1][f], f"{season[0]} targets (24h) Hub: SP15": targets_season[1][f], f"{season[0]} predictions (24h) Hub: ZP26": predictions_season[2][f], f"{season[0]} targets (24h) Hub: ZP26": targets_season[2][f], f"{season[1]} predictions (24h) Hub: NP15": predictions_season[3][f], f"{season[1]} targets (24h) Hub: NP15": targets_season[3][f], f"{season[1]} predictions (24h) Hub: SP15": predictions_season[4][f], f"{season[1]} targets (24h) Hub: SP15": targets_season[4][f], f"{season[1]} predictions (24h) Hub: ZP26": predictions_season[5][f], f"{season[1]} targets (24h) Hub: ZP26": targets_season[5][f],f"{season[2]} predictions (24h) Hub: NP15": predictions_season[6][f], f"{season[2]} targets (24h) Hub: NP15": targets_season[6][f], f"{season[2]} predictions (24h) Hub: SP15": predictions_season[7][f], f"{season[2]} targets (24h) Hub: SP15": targets_season[7][f], f"{season[2]} predictions (24h) Hub: ZP26": predictions_season[8][f], f"{season[2]} targets (24h) Hub: ZP26": targets_season[8][f], f"{season[3]} predictions (24h) Hub: NP15": predictions_season[9][f], f"{season[3]} targets (24h) Hub: NP15": targets_season[9][f], f"{season[3]} predictions (24h) Hub: SP15": predictions_season[10][f], f"{season[3]} targets (24h) Hub: SP15": targets_season[10][f], f"{season[3]} predictions (24h) Hub: ZP26": predictions_season[11][f], f"{season[3]} targets (24h) Hub: ZP26": targets_season[11][f]})
 
+        #for 39h interval pred and targets...
         for f in range(len(targets_season[0])):
                 wandb.log({f"{season[0]} predictions (39h) Hub: NP15": predictions_season[0][f], f"{season[0]} targets (39h) Hub: NP15": targets_season[0][f], f"{season[0]} predictions (39h) Hub: SP15": predictions_season[1][f], f"{season[0]} targets (39h) Hub: SP15": targets_season[1][f], f"{season[0]} predictions (39h) Hub: ZP26": predictions_season[2][f], f"{season[0]} targets (39h) Hub: ZP26": targets_season[2][f], f"{season[1]} predictions (39h) Hub: NP15": predictions_season[3][f], f"{season[1]} targets (39h) Hub: NP15": targets_season[3][f], f"{season[1]} predictions (39h) Hub: SP15": predictions_season[4][f], f"{season[1]} targets (39h) Hub: SP15": targets_season[4][f], f"{season[1]} predictions (39h) Hub: ZP26": predictions_season[5][f], f"{season[1]} targets (39h) Hub: ZP26": targets_season[5][f],f"{season[2]} predictions (39h) Hub: NP15": predictions_season[6][f], f"{season[2]} targets (39h) Hub: NP15": targets_season[6][f], f"{season[2]} predictions (39h) Hub: SP15": predictions_season[7][f], f"{season[2]} targets (39h) Hub: SP15": targets_season[7][f], f"{season[2]} predictions (39h) Hub: ZP26": predictions_season[8][f], f"{season[2]} targets (39h) Hub: ZP26": targets_season[8][f], f"{season[3]} predictions (39h) Hub: NP15": predictions_season[9][f], f"{season[3]} targets (39h) Hub: NP15": targets_season[9][f], f"{season[3]} predictions (39h) Hub: SP15": predictions_season[10][f], f"{season[3]} targets (39h) Hub: SP15": targets_season[10][f], f"{season[3]} predictions (39h) Hub: ZP26": predictions_season[11][f], f"{season[3]} targets (39h) Hub: ZP26": targets_season[11][f]})
             
                                                            
-        
+        # 7 day mae and rmse for each season
         for f in range(len(Mae_Season_list[0])):
     
             wandb.log({f"{season[0]}_RMSE_loss": RMSE_Season_list[0][f], f"{season[0]}_MAE_loss": Mae_Season_list[0][f], f"{season[1]}_MAE_loss": Mae_Season_list[1][f], f"{season[1]}_RMSE_loss": RMSE_Season_list[1][f], f"{season[2]}_RMSE_loss": RMSE_Season_list[2][f],f"{season[2]}_MAE_loss": Mae_Season_list[2][f], f"{season[3]}_RMSE_loss": RMSE_Season_list[3][f],f"{season[3]}_MAE_loss": Mae_Season_list[3][f]})
             
-
-        
+        #log average mae and rmse for each season, and the total for all seasons
         wandb.log({f"{season[0]}_Average_MAE_Loss": Season_MAE_Loss[0], f"{season[1]}_Average_MAE_Loss": Season_MAE_Loss[1], f"{season[2]}_Average_MAE_Loss": Season_MAE_Loss[2], f"{season[3]}_Average_MAE_Loss": Season_MAE_Loss[3],  f"{season[0]}_Average_RMSE_Loss": Season_RMSE_Loss[0], f"{season[1]}_Average_RMSE_Loss": Season_RMSE_Loss[1], f"{season[2]}_Average_RMSE_Loss": Season_RMSE_Loss[2], f"{season[3]}_Average_RMSE_Loss": Season_RMSE_Loss[3]})     
         wandb.log({"Total_Average_RMSE_Loss": Total_average_rmse_loss/4})
         wandb.log({"Total_Average_MAE_Loss": Total_average_mae_loss/4})
@@ -245,6 +276,6 @@ modelnames = ["LSTM", "Queryselector", "TFT"]
 modelname = modelnames[0]
 set_hyp_config(modelname)
 wandb_initialize(modelname)
-#run("efwef") #modelnavn ++ antallet af dage vi træner/validere på
+
 
     
