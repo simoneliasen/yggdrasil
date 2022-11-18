@@ -31,7 +31,7 @@ class LSTM():
         df_features,df_targets = feature_label_split(df, self.targets_cols)
         df_features = df_features.drop(columns=['hour'], axis=1)
 
-        df_targets = remove_outliers(df_targets)
+        #df_targets = remove_outliers(df_targets)
         df_features = normalize_dataframe(df_features)
 
         number_of_train_hours = len(df_features)-self.validation_length

@@ -7,8 +7,8 @@ import pandas as pd
 import numpy as np
  
 # adding Folder_2/subfolder to the system path
-sys.path.insert(0, 'models\\TemporalFusionTransformer')
-sys.path.insert(0, 'models\\lstm')
+sys.path.insert(0, 'models/TemporalFusionTransformer')
+sys.path.insert(0, 'models/lstm')
 # importing the hello
 from config_models import *
 from lstm import LSTM
