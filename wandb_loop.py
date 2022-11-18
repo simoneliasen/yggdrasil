@@ -155,7 +155,7 @@ def run(hyper_dick):
             if modelname == "Queryselector":
                 #simons train method mangler
                 mae, rmse, predictions = model.train(df_season, hyper_dick)
-                7*3*39
+                
 
             Mae_Season_list.append(mae)
             RMSE_Season_list.append(rmse)  
