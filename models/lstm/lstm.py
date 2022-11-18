@@ -6,7 +6,7 @@ from lstm_data_handler import *
 import pandas as pd
 import torch.optim as optim
 import torch.cuda as cuda
-from pytorch_forecasting.optim import Ranger
+#from pytorch_forecasting.optim import Ranger
 
 class LSTM():
     def __init__(self) -> None:
@@ -81,7 +81,7 @@ class LSTM():
             return optim.SGD(self.model.parameters(),lr=learning_rate, weight_decay=weight_decay)
         elif optimizer_name == "ranger":
             raise Exception("Ranger optimizer is not supported yet")
-            return Ranger
+            return None
         else:
             raise Exception("Optimizer not found")
 
