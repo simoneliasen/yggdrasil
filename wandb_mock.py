@@ -31,7 +31,7 @@ hyper_dict.n_decoder_layers = 1
 hyper_dict.days_training_length = 31
 
 
-df_dataset = pd.read_csv(r"data\\dataset_dropNA.csv")
+df_dataset = pd.read_csv(r"data/dataset_dropNA.csv")
 
 df_dataset = df_dataset[(df_dataset.index<np.percentile(df_dataset.index, 50))]
 
