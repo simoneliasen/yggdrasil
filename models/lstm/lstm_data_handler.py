@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 def grab_last_batch(hn,dimension,hidden_size):
     return hn[:,-1,:].reshape(dimension,1,hidden_size)
 
-def feature_label_split(df: pd.DataFrame, target_cols) -> tuple[pd.DataFrame,pd.DataFrame]:
+def feature_label_split(df: pd.DataFrame, target_cols):
     y = df[target_cols]
     x = df.drop(columns=target_cols)
     return x, y
