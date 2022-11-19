@@ -7,7 +7,7 @@ try:
     from dataloader import get_train_val
 except:
     # setting path
-    sys.path.append('models/TemporalFusionTransformer/')
+    sys.path.append('/content/yggdrasil/models/TemporalFusionTransformer/')
     from dataloader import get_train_val
 from transformer import get_tft, get_trainer
 from evaluate import evaluate, predict, predict_on_new_data, get_best_tft
