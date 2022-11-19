@@ -130,7 +130,7 @@ def timestep_check(df_features, endate):
  
 def run(hyper_dick):
  
-        df_features = pd.read_csv(r"data\\datasetV3.csv")
+        df_features = pd.read_csv(r"data/datasetV3.csv")
         season =  ["Winter", "Spring", "Summer", "Fall"]
         dates = ["2021-01-10 23:00:00", "2021-04-11 23:00:00", "2021-07-11 23:00:00", "2021-10-10 23:00:00" ]
         Total_average_mae_loss = 0
