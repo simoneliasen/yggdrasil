@@ -44,7 +44,7 @@ class TFT:
         RMSEs = []
         for weekday in range(7):
             training, validation = get_train_val(data, weekday)
-            batch_size = config.batch_size  # set this between 32 to 128
+            batch_size = 8 #eller crasher den config.batch_size  # set this between 32 to 128
             train_dataloader = training.to_dataloader(train=True, batch_size=batch_size, num_workers=0)
             val_dataloader = validation.to_dataloader(train=False, batch_size=batch_size * 10, num_workers=0)
 
