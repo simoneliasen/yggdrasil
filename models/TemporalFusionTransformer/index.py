@@ -67,6 +67,11 @@ class TFT:
                 print("MAEs:", MAEs)
             except:
                 print("error")
+                # fylder ud med gamle til den 1 i fall hvor den crasher:
+                predictions.append(predictions[-1])
+                targets.append(targets[-1])
+                MAEs.append(MAEs[-1])
+                RMSEs.append(RMSEs[-1])
 
         print("predictions final:", predictions)
         print("mae final:", MAEs)
