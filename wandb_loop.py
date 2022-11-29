@@ -5,6 +5,7 @@ import wandb
 from copy import deepcopy
 from models.TemporalFusionTransformer.index import TFT
 from models.lstm.lstm import LSTM
+from models.TemporalFusionTransformer.config_models import Config
 
 sweep_config_feature_loop = {
     'name': 'Feature Elimination',
@@ -75,15 +76,15 @@ sweep_config = {
  
 def set_hyp_config(modelname):
     sweep_config['name'] = modelname
-    if modelname == "LSTM":
-        print('speciel setting for: ', modelname)
-        sweep_config['parameters']['batch_size']['values'] = [1] #LSTM tager kun batch_size på 1
-        del sweep_config['parameters']['encoder_length'] #Fjerner alle transformers parametre som ikke er med i LSTM
-        del sweep_config['parameters']['attention_heads']
-        del sweep_config['parameters']['encoding_size']
-        del sweep_config['parameters']['n_encoder_layers']
-        del sweep_config['parameters']['n_decoder_layers']
-        sweep_config['parameters']['optimizer']['values'] = ['rAdam', 'adam', 'sgd']
+    #if modelname == "LSTM":
+    #    print('speciel setting for: ', modelname)
+        #sweep_config['parameters']['batch_size']['values'] = [1] #LSTM tager kun batch_size på 1
+    #    del sweep_config['parameters']['encoder_length'] #Fjerner alle transformers parametre som ikke er med i LSTM
+    #    del sweep_config['parameters']['attention_heads']
+    #    del sweep_config['parameters']['encoding_size']
+    #    del sweep_config['parameters']['n_encoder_layers']
+    #    del sweep_config['parameters']['n_decoder_layers']
+        #sweep_config['parameters']['optimizer']['values'] = ['rAdam', 'adam', 'sgd']
         #Tænker der skal være noget til optim her, vil gætte på: sweep_config['parameters']['optimizer']['values'] = ['rAdam', 'adam']
  
     if modelname == "TFT":
@@ -96,13 +97,15 @@ def set_hyp_config(modelname):
  
  
 def wandb_initialize(modelname):
-    sweep_id = wandb.sweep(sweep_config, project="Yggdrasil", entity="ygg_monkeys") #todo: dette laver en ny sweep.
+    #sweep_id = wandb.sweep(sweep_config_feature_loop, project="Yggdrasil", entity="ygg_monkeys") #todo: dette laver en ny sweep.
     #sweep_ids = {
     #    "LSTM":"ywympjpq", 
     #    "Queryselector":"69vvdc1l", 
     #    "TFT":"29snzczn"
     #}
-    wandb.agent(sweep_id=sweep_id, function=sweep, project="Yggdrasil", entity="ygg_monkeys")
+    feature_elimination_sweep_id = "qazz0qmq"
+    print("sweep id:", feature_elimination_sweep_id)
+    wandb.agent(sweep_id=feature_elimination_sweep_id, function=sweep, project="Yggdrasil", entity="ygg_monkeys")
     #kan også bruge et specifikt sweep_id, fx f7pvbfd4 (find på wandb under sweeps)
     #wandb.watch(model)
  
@@ -142,10 +145,21 @@ def timestep_check(df_features, endate):
  
  
 def run(hyper_dick):
-        print("hyper_dick her:", hyper_dick)
-        return
- 
         df_features = pd.read_csv(r"data/datasetV3.csv")
+
+        #Til variable elimination:
+        print("DF shape:", df_features.shape)
+        excluded_feature_index = hyper_dick.feature_index
+        excluded_feature = df_features.columns[[excluded_feature_index]]
+        print("excluded feature index:", excluded_feature_index)
+        print("excluded feature:", excluded_feature)
+        df_features = df_features.drop(excluded_feature,axis = 1)
+        print("New DF shape:", df_features.shape)
+
+        #bedste run for lstm i initial tuning:
+        # https://wandb.ai/ygg_monkeys/Yggdrasil/runs/952s4os9/overview?workspace=user-thebigyesman 
+        hyper_dick = Config(1, 512, None, None, "sgd", None, 24, 0.1, 0, 0.05, 4, None, None, 124)
+
         season =  ["Winter", "Spring", "Summer", "Fall"]
         dates = ["2021-01-10 23:00:00", "2021-04-11 23:00:00", "2021-07-11 23:00:00", "2021-10-10 23:00:00" ]
         Total_average_mae_loss = 0
