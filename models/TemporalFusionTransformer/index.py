@@ -23,7 +23,7 @@ import time
 
 class TFT:
     def train(data:pd.DataFrame, config:Config):
-        return TFT.train2(data, config)
+        #return TFT.train2(data, config)
 
         # det her nede er godt til debug, da det giver bedre info end wandb.
         try:
@@ -42,27 +42,36 @@ class TFT:
         targets = []
         MAEs = []
         RMSEs = []
+
         for weekday in range(7):
-            training, validation = get_train_val(data, weekday)
-            batch_size = 8 #eller crasher den config.batch_size  # set this between 32 to 128
-            train_dataloader = training.to_dataloader(train=True, batch_size=batch_size, num_workers=0)
-            val_dataloader = validation.to_dataloader(train=False, batch_size=batch_size * 10, num_workers=0)
+            try:
+                training, validation = get_train_val(data, weekday, config)
+                batch_size = 8 #eller crasher den config.batch_size  # set this between 32 to 128
+                train_dataloader = training.to_dataloader(train=True, batch_size=batch_size, num_workers=0)
+                val_dataloader = validation.to_dataloader(train=False, batch_size=batch_size * 10, num_workers=0)
 
-            tft = get_tft(training, config) if weekday == 0 else get_best_tft(trainer)
+                tft = get_tft(training, config) if weekday == 0 else get_best_tft(trainer)
 
-            # fit network
-            trainer.fit(
-                tft,
-                train_dataloaders=train_dataloader,
-                val_dataloaders=val_dataloader,
-            )
+                # fit network
+                trainer.fit(
+                    tft,
+                    train_dataloaders=train_dataloader,
+                    val_dataloaders=val_dataloader,
+                )
 
-            preds, tgts, avg_mae, avg_rmse = evaluate(trainer, val_dataloader)
-            predictions.append(preds)
-            targets.append(tgts)
-            MAEs.append(avg_mae)
-            RMSEs.append(avg_rmse)
-            print("MAEs:", MAEs)
+                preds, tgts, avg_mae, avg_rmse = evaluate(trainer, val_dataloader)
+                predictions.append(preds)
+                targets.append(tgts)
+                MAEs.append(avg_mae)
+                RMSEs.append(avg_rmse)
+                print("MAEs:", MAEs)
+            except:
+                print("error")
+                # fylder ud med gamle til den 1 i fall hvor den crasher:
+                predictions.append(predictions[-1])
+                targets.append(targets[-1])
+                MAEs.append(MAEs[-1])
+                RMSEs.append(RMSEs[-1])
 
         print("predictions final:", predictions)
         print("mae final:", MAEs)

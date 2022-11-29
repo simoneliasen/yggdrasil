@@ -1,9 +1,12 @@
+from dataclasses import dataclass
+
 class Optimizers:
     rAdam = 'rAdam'
     adam = 'adam'
     sgd = 'sgd'
     ranger = 'ranger'
 
+@dataclass
 class Config:
     batch_size:int
     hidden_size:int

@@ -3,12 +3,14 @@ from pytorch_forecasting.data.examples import get_stallion_data
 from pytorch_forecasting import TimeSeriesDataSet
 from pytorch_forecasting.data.encoders import EncoderNormalizer, MultiNormalizer, TorchNormalizer
 import pandas as pd
+from config_models import Config
 
-def get_train_val(data:pd.DataFrame, weekday:int) -> list[TimeSeriesDataSet]:
+def get_train_val(data:pd.DataFrame, weekday:int, config:Config):
+
     """
     Henter training og validation dataset.
     """
-
+    data = data.dropna()
     data['time_idx'] = range(0, len(data))
     data = data.drop(['hour'], axis=1)
     data['group'] = 0 # vi har kun 1 group, i.e california.
@@ -16,7 +18,6 @@ def get_train_val(data:pd.DataFrame, weekday:int) -> list[TimeSeriesDataSet]:
     #print(data.head())
     # create dataset and loaders
     max_prediction_length = 39
-    max_encoder_length = 24
 
     # vælg dag til validering: altså til en rykke en dag
     #print("full data shape:", data.shape)
@@ -46,8 +47,8 @@ def get_train_val(data:pd.DataFrame, weekday:int) -> list[TimeSeriesDataSet]:
             "TH_ZP26_GEN-APND"
         ],
         group_ids=["group"],
-        min_encoder_length=max_encoder_length // 2,  # keep encoder length long (as it is in the validation set)
-        max_encoder_length=max_encoder_length,
+        min_encoder_length=config.encoder_length,  # keep encoder length long (as it is in the validation set)
+        max_encoder_length=config.encoder_length,
         min_prediction_length=max_prediction_length,
         max_prediction_length=max_prediction_length,
         #static_categoricals=["agency", "sku"],
