@@ -5,7 +5,8 @@ from pytorch_forecasting.data.encoders import EncoderNormalizer, MultiNormalizer
 import pandas as pd
 from config_models import Config
 
-def get_train_val(data:pd.DataFrame, weekday:int, config:Config) -> list[TimeSeriesDataSet]:
+def get_train_val(data:pd.DataFrame, weekday:int, config:Config):
+
     """
     Henter training og validation dataset.
     """

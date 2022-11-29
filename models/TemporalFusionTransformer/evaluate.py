@@ -8,7 +8,7 @@ from dataloader import get_time_varying_known_reals
 
 from plot_predictions import plot_predictions
 
-def get_best_tft(trainer) -> TemporalFusionTransformer:
+def get_best_tft(trainer):
     # hvis vi har trænet nu, så tager den den.
     # ellers så bbrug filen best_weights.ckpt
     # filen kan erstattes løbende af de bedste checkpoints
@@ -49,7 +49,7 @@ def evaluate(trainer, val_dataloader):
     print("targets not as tensor:", targets_not_as_tensor)
     return preds_not_as_tensor, targets_not_as_tensor, avg_mae, avg_rmse
 
-def get_mae_rmse(targets:list[torch.Tensor], predictions:list[torch.Tensor]) -> list[int]:
+def get_mae_rmse(targets, predictions):
     """
     Tager targets og predictions for de 3 hubs og returnerer gennemsnitlig MAE og RMSE.
     """
