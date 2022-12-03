@@ -1,4 +1,4 @@
-#Inspired by https://towardsdatascience.com/building-rnn-lstm-and-gru-for-time-series-using-pytorch-a46e5b094e7b
+    #Inspired by https://towardsdatascience.com/building-rnn-lstm-and-gru-for-time-series-using-pytorch-a46e5b094e7b
 import torch
 import matplotlib.pyplot as plt 
 import torch.nn as nn
