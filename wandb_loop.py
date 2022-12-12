@@ -22,60 +22,54 @@ sweep_config_feature_loop = {
 }
 
 sweep_config = {
-    'name': 'navn',
+    'name': 'Hyper extended',
     'method': 'random', #grid, random, bayesian
     'metric': {
     'name': 'Total_Average_MAE_Loss',
-    'goal': 'minimize'  
+    'goal': 'minimize'
         },
     'parameters': {
         'batch_size': {
-            'values': [16, 32, 64, 128, 256, 512]
+            'values': [1]
         },
         'hidden_size': {
-            'values': [8, 16, 32, 64, 128, 256, 512]
-        },        
-        'attention_heads': {
-            'values': [1, 2, 4, 8, 16]
-        },
-        'encoding_size': {
-            'values': [5, 10, 20, 40]
+            'min': 128,
+            'max': 2048, 
         },
         'optimizer': {
-            'values': ['rAdam', 'adam', 'sgd', 'ranger']
-        },
-        'encoder_length': {
-            'values': [6, 12, 24, 48, 92, 184, 268, 536]
+            'values': ['sgd']
         },
         'sequence_length': {
-            'values': [6, 12, 24, 48, 92, 184, 268, 536]
+            'min': 6,
+            'max': 92,
         },
         'lr': {
-            'values': [0.0001, 0.001, 0.01, 0.1]
+            #'distribution: log_uniform'
+            'min': 0.0001,
+            'max': 0.2,
         },
         'weight_decay': {
-            'values': [0, 0.000001, 0.0001]
+            #'distribution: log_uniform'
+            'min': 0.0,
+            'max': 0.01,
         },
         'dropout_rate': {
-            'values': [0, 0.05, 0.1, 0.2]
+            #'distribution: log_uniform'
+            'min': 0.0,
+            'max': 0.2,
         },
         'LSTM_layers': {
-            'values': [1, 2, 4, 8, 16]
-        },
-        'n_encoder_layers': {
-            'values': [1, 2, 4, 8, 16]
-        },
-        'n_decoder_layers': {
-            'values': [1, 2, 4, 8, 16]
+            'values': [1, 2, 3, 4, 5, 6, 7, 8]
         },
         'days_training_length': {
-            'values': [31, 62, 124, 248, 365, 520]
+            'min': 31,
+            'max': 520,
         },
     }
 }
  
 def set_hyp_config(modelname):
-    sweep_config['name'] = modelname
+    #sweep_config['name'] = modelname
     #if modelname == "LSTM":
     #    print('speciel setting for: ', modelname)
         #sweep_config['parameters']['batch_size']['values'] = [1] #LSTM tager kun batch_size på 1
@@ -97,19 +91,19 @@ def set_hyp_config(modelname):
  
  
 def wandb_initialize(modelname):
-    sweep_id = wandb.sweep(sweep_config_feature_loop, project="Yggdrasil", entity="ygg_monkeys") #todo: dette laver en ny sweep.
-    #sweep_ids = {
-    #    "LSTM":"ywympjpq", 
-    #    "Queryselector":"69vvdc1l", 
-    #    "TFT":"29snzczn"
-    #}
+    #sweep_id = wandb.sweep(sweep_config, project="Yggdrasil", entity="ygg_monkeys") #todo: dette laver en ny sweep.
+    sweep_ids = {
+        "LSTM":"fa49j5sv", 
+        "Queryselector":"69vvdc1l",
+        "TFT":"29snzczn"
+    }
 
-    wandb.agent(sweep_id=sweep_id, function=sweep, project="Yggdrasil", entity="ygg_monkeys")
+    wandb.agent(sweep_id=sweep_ids[modelname], function=sweep, project="Yggdrasil", entity="ygg_monkeys")
     #kan også bruge et specifikt sweep_id, fx f7pvbfd4 (find på wandb under sweeps)
     #wandb.watch(model)
  
 def sweep():
-    wandb.init(config=sweep_config_feature_loop)
+    wandb.init(config=sweep_config)
     run(wandb.config)
  
  
@@ -151,12 +145,15 @@ def remove_n_worst_features(df:pd.DataFrame, n:int) -> pd.DataFrame:
     last_n_rows = index2mae.iloc[-n:]
     remove_feature_indexes = last_n_rows['feature_index'].tolist()
     print('feature indexes der skal fjernes:', remove_feature_indexes)
+    failed_index = [29,100,156,20,155,13,106,157,27,12,377,378,77]
 
-    # 2 fjern feature indexerne.
     for idx in remove_feature_indexes:
-        excluded_feature = df.columns[[idx]]
-        print("excluded feature:", excluded_feature)
-        df = df.drop(excluded_feature,axis = 1)
+            exist_count = failed_index.count(idx)
+            if exist_count == 0 or idx < 368:
+                print("hello no failed features")
+                excluded_feature = df.columns[[idx]]
+                print("excluded feature:", excluded_feature)
+                df = df.drop(excluded_feature,axis = 1)
 
     print("New DF shape:", df.shape)
     return df
@@ -164,11 +161,11 @@ def remove_n_worst_features(df:pd.DataFrame, n:int) -> pd.DataFrame:
  
 def run(hyper_dick):
         df_features = pd.read_csv(r"data/datasetV3.csv")
-        df_features = remove_n_worst_features(df_features, hyper_dick.n)
+        #df_features = remove_n_worst_features(df_features, hyper_dick.n)
 
         #bedste run for lstm i initial tuning:
         # https://wandb.ai/ygg_monkeys/Yggdrasil/runs/952s4os9/overview?workspace=user-thebigyesman 
-        hyper_dick = Config(1, 512, None, None, "sgd", None, 24, 0.1, 0, 0.05, 4, None, None, 124)
+        #hyper_dick = Config(1, 512, None, None, "sgd", None, 24, 0.1, 0, 0.05, 4, None, None, 124)
 
         season =  ["Winter", "Spring", "Summer", "Fall"]
         dates = ["2021-01-10 23:00:00", "2021-04-11 23:00:00", "2021-07-11 23:00:00", "2021-10-10 23:00:00" ]
