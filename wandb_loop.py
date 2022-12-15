@@ -176,7 +176,7 @@ def run(hyper_dick):
 
         #bedste run for lstm i initial tuning:
         # https://wandb.ai/ygg_monkeys/Yggdrasil/runs/952s4os9/overview?workspace=user-thebigyesman 
-        #hyper_dick = Config(1, 512, None, None, "sgd", None, 24, 0.1, 0, 0.05, 4, None, None, 124)
+        hyper_dick = Config(1, 461, None, None, "sgd", None, 32, 0.12467119874140932, 0.0019913732590904044, 0.0755042607191115, 3, None, None, 36)
 
         season =  ["Winter", "Spring", "Summer", "Fall"]
         dates = ["2021-01-10 23:00:00", "2021-04-11 23:00:00", "2021-07-11 23:00:00", "2021-10-10 23:00:00" ]
