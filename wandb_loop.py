@@ -188,7 +188,6 @@ def run(hyper_dick):
         Season_MAE_Loss = []
         Season_RMSE_Loss = []
         targets_season = []
-        maes, rmses = [], []
         predictions_season = [[],[],[],[],[]] #5 ensambles.
         for x in range(len(dates)):
 
@@ -199,8 +198,6 @@ def run(hyper_dick):
                 if modelname == "LSTM":
                     lstm_obj = LSTM()
                     mae, rmse, predictions, targets = lstm_obj.train(df_season, hyper_dick)
-                    maes.extend(mae)
-                    rmses.extend(rmse)
                     #print(predictions, targets)
                 if modelname == "TFT":
                     mae, rmse, predictions, targets = TFT.train(df_season, hyper_dick)
@@ -300,6 +297,9 @@ def run(hyper_dick):
         notfirst15 = 14
         stepmove1 = 39
         stepmove2 = 39
+
+        maes = []
+        rmses = []
         for f in range(len(targets_season[0])):
 
             if f == stepmove2:
@@ -308,8 +308,34 @@ def run(hyper_dick):
 
             if f > notfirst15:
                 logs:dict = {}
+                preds_np15 = []
+                preds_sp15 = []
+                preds_zp15 = []
+
+                target_np15 = 0
+                target_sp15 = 0
+                target_zp15 = 0
+
                 for ensamble_idx in range(len(predictions_season)):
+                    preds_np15.append(predictions_season[ensamble_idx][0][f])
+                    preds_sp15.append(predictions_season[ensamble_idx][1][f])
+                    preds_zp15.append(predictions_season[ensamble_idx][2][f])
+                    target_np15 = targets_season[0][f]
+                    target_sp15 = targets_season[1][f]
+                    target_zp15 = targets_season[2][f]
                     logs.update({f"Ensamble {ensamble_idx} - {season[0]} predictions (24h) Hub: NP15": predictions_season[ensamble_idx][0][f], f"Ensamble {ensamble_idx} - {season[0]} targets (24h) Hub: NP15": targets_season[0][f], f"Ensamble {ensamble_idx} - {season[0]} predictions (24h) Hub: SP15": predictions_season[ensamble_idx][1][f], f"Ensamble {ensamble_idx} - {season[0]} targets (24h) Hub: SP15": targets_season[1][f], f"Ensamble {ensamble_idx} - {season[0]} predictions (24h) Hub: ZP26": predictions_season[ensamble_idx][2][f], f"Ensamble {ensamble_idx} - {season[0]} targets (24h) Hub: ZP26": targets_season[2][f], f"Ensamble {ensamble_idx} - {season[1]} predictions (24h) Hub: NP15": predictions_season[ensamble_idx][3][f], f"Ensamble {ensamble_idx} - {season[1]} targets (24h) Hub: NP15": targets_season[3][f], f"Ensamble {ensamble_idx} - {season[1]} predictions (24h) Hub: SP15": predictions_season[ensamble_idx][4][f], f"Ensamble {ensamble_idx} - {season[1]} targets (24h) Hub: SP15": targets_season[4][f], f"Ensamble {ensamble_idx} - {season[1]} predictions (24h) Hub: ZP26": predictions_season[ensamble_idx][5][f], f"Ensamble {ensamble_idx} - {season[1]} targets (24h) Hub: ZP26": targets_season[5][f],f"Ensamble {ensamble_idx} - {season[2]} predictions (24h) Hub: NP15": predictions_season[ensamble_idx][6][f], f"Ensamble {ensamble_idx} - {season[2]} targets (24h) Hub: NP15": targets_season[6][f], f"Ensamble {ensamble_idx} - {season[2]} predictions (24h) Hub: SP15": predictions_season[ensamble_idx][7][f], f"Ensamble {ensamble_idx} - {season[2]} targets (24h) Hub: SP15": targets_season[7][f], f"Ensamble {ensamble_idx} - {season[2]} predictions (24h) Hub: ZP26": predictions_season[ensamble_idx][8][f], f"Ensamble {ensamble_idx} - {season[2]} targets (24h) Hub: ZP26": targets_season[8][f], f"Ensamble {ensamble_idx} - {season[3]} predictions (24h) Hub: NP15": predictions_season[ensamble_idx][9][f], f"Ensamble {ensamble_idx} - {season[3]} targets (24h) Hub: NP15": targets_season[9][f], f"Ensamble {ensamble_idx} - {season[3]} predictions (24h) Hub: SP15": predictions_season[ensamble_idx][10][f], f"Ensamble {ensamble_idx} - {season[3]} targets (24h) Hub: SP15": targets_season[10][f], f"Ensamble {ensamble_idx} - {season[3]} predictions (24h) Hub: ZP26": predictions_season[ensamble_idx][11][f], f"Ensamble {ensamble_idx} - {season[3]} targets (24h) Hub: ZP26": targets_season[11][f]})
+                
+                ae_sp15 = abs(target_sp15 - (sum(preds_sp15) / len(preds_sp15)))
+                ae_np15 = abs(target_np15 - (sum(preds_np15) / len(preds_np15)))
+                ae_zp15 = abs(target_zp15 - (sum(preds_zp15) / len(preds_zp15)))
+
+                maes.append(ae_sp15)
+                maes.append(ae_zp15)
+                maes.append(ae_np15)
+
+                rmses.append(ae_np15 * ae_np15)
+                rmses.append(ae_sp15 * ae_sp15)
+                rmses.append(ae_sp15 * ae_sp15)
                 wandb.log(logs)
 
         avg_mae = sum(maes) / len(maes)
