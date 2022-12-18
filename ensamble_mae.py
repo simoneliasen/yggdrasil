@@ -5,11 +5,11 @@ maes = []
 rmses = []
 
 for i in range(12):
-    csv:pd.DataFrame = pd.read_csv(fr"data/e{i}.csv")
+    csv:pd.DataFrame = pd.read_csv(fr"data/ensamble1/e{i}.csv")
     csv = csv[csv.columns.drop(list(csv.filter(regex='__MIN')))]
     csv = csv[csv.columns.drop(list(csv.filter(regex='__MAX')))]
     del csv[csv.columns[0]]
-
+    print(csv.shape)
     abs_errors = []
     squared_errors = []
 
