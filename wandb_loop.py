@@ -11,7 +11,7 @@ import traceback
 import time
 
 sweep_config_test = {
-    'name': 'Ensamble',
+    'name': 'Ensamble v2',
     'method': 'grid', #grid, random, bayesian
     'metric': {
     'name': 'Total_Average_MAE_Loss',
