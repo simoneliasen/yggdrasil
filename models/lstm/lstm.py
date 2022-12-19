@@ -14,7 +14,7 @@ class LSTM():
         self.validation_length = 39
         self.validation_batchsize = 1
 
-    def train(self,df: pd.DataFrame, hyper_dict):
+    def train(self,df: pd.DataFrame, hyper_dict, list_of_indices):
         """
         Trains the model on 7 days and returns the loss of the best model
         Expected hyper_dict parameters:
@@ -40,18 +40,26 @@ class LSTM():
 
         model_state_dict_path = "lstm_state_dict.pth"
         model_params = {'input_dim': len(df_features.columns), 'hidden_dim' : hyper_dict.hidden_size, 'layer_dim' : hyper_dict.LSTM_layers, 'output_dim' : 3, 'dropout_prob' : hyper_dict.dropout_rate}
-        self.create_new_model(model_params)
-        torch.save(self.model.state_dict(), model_state_dict_path)
 
         predictions = []
         targets = []
         MAEs = []
         RMSEs = []
-        for i in range(7):
+        for i in range(len(list_of_indices)):
+            #laver nu en ny model her i starten, skal nok lige dobbelt tjekkes
+            print(f"")
+            print(f"loading new model")
+            self.create_new_model(model_params)
+            torch.save(self.model.state_dict(), model_state_dict_path)
+            print("Running" ,len(list_of_indices), "days")
             print(f"")
             print(f"Training for day {i}")
-            df_features_loop = self.offset_dataframe(df_features,i)
-            df_targets_loop = self.offset_dataframe(df_targets,i)
+            #df_features_loop = self.offset_dataframe(df_features,i)
+            #df_targets_loop = self.offset_dataframe(df_targets,i)
+            df_features_loop = self.new_offset_dataframe(df_features,i,list_of_indices, 0)
+            df_targets_loop = self.new_offset_dataframe(df_targets,i,list_of_indices, 0)
+            #df_features_loop = self.offset_dataframe(df_features,i)
+            #df_targets_loop = self.offset_dataframe(df_targets,i)
 
             x_train, y_train, x_test, y_test = lstm_train_test_splitter(df_features_loop, df_targets_loop, hyper_dict.sequence_length, hyper_dict.batch_size, self.validation_length, self.validation_batchsize)
             x_train, y_train, x_test, y_test = self.convert_to_tensors(x_train, y_train, x_test, y_test)
@@ -66,9 +74,17 @@ class LSTM():
                 forward_hidden_states = True
 
             hn,cn = opt.train(x_train,y_train,x_test,y_test,model_statedict_path=model_state_dict_path,forward_hn_cn=forward_hidden_states)
+            print(f"")
+            print("stepping and training for test, including validation day")
+            df_features_loop = self.new_offset_dataframe(df_features,i,list_of_indices, 39)
+            df_targets_loop = self.new_offset_dataframe(df_targets,i,list_of_indices, 39)
+            hn,cn = opt.train_without_val(x_train,y_train,x_test,y_test,model_statedict_path=model_state_dict_path,forward_hn_cn=forward_hidden_states)
             
             new_predictions = opt.evaluate(x_test,grab_last_batch(hn,hyper_dict.LSTM_layers,hyper_dict.hidden_size),grab_last_batch(cn,hyper_dict.LSTM_layers,hyper_dict.hidden_size),model_state_dict_path)
             mae,rmse = get_mae_rmse(new_predictions,y_test)
+
+            print(f"")
+            print(f"Test for day {i} done")
 
             MAEs.append(mae)
             RMSEs.append(rmse)
@@ -94,6 +110,16 @@ class LSTM():
         self.model = LSTMModel(**model_params)
         if torch.cuda.is_available():
             self.model.cuda()
+
+    def new_offset_dataframe(self,df,i,list_of_indices, daysoffset) -> pd.DataFrame:
+        #daysoffset er bare step på 24 timer for at gå til næste dag mellem val og test
+        end_index_of_test_or_val = list_of_indices[i]
+        later_validation_hours = end_index_of_test_or_val + daysoffset #(slut punkt på test)
+        unused_train_hours = end_index_of_test_or_val - 39 - 744 + daysoffset #(trækker træning og test timer fra slut på test, og finder derved start, og skal så slette alt inden)
+        df_copy = df.iloc[unused_train_hours:later_validation_hours]
+        #print(df_copy.head(5))
+        #print(df_copy.tail(5))
+        return df_copy
 
     def offset_dataframe(self,df,i) -> pd.DataFrame:
         later_validation_hours = (6-i)*24

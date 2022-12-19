@@ -63,7 +63,7 @@ class Optimization:
 
         # Early stopping
         best_val_loss = 9999999999999999999.9
-        patience = 10 #bare til hyper tuning.
+        patience = 2 #bare til hyper tuning.
         trigger_times = 0
         epoch = 0
 
@@ -115,6 +115,43 @@ class Optimization:
             self.plot_losses()
         
         return (hn,cn)
+
+    def train_without_val(self, train_features: torch.Tensor,train_targets:torch.Tensor, validation_features:torch.Tensor, validation_targets:torch.Tensor, n_epochs:int = 30, model_statedict_path:str = "lstm_model.pth", forward_hn_cn:bool = False, plot_losses:bool = False):
+            """
+            hn,cn = opt.train(train_features=x_train,train_targets=y_train, validation_features=x_test, validation_target=y_test, n_epochs=n_epochs,forward_hn_cn=True,plot_losses=True, model_path = "lstm_model.pt")
+            Trains the model and saves it to the model_path. The last hidden and cell states are returned.
+            if forward_hn_cn is True, the last hidden and cell states are forwarded to the next batch. This is useful for training on sequences, with batchsize of 1.
+            """
+
+            epoch = 0
+
+            #Load model again efter early stopping
+            self.model.load_state_dict(torch.load(model_statedict_path))
+
+            for epoch in range(1, n_epochs + 1):
+                batch_losses = []
+                h0,c0,hn,cn = None,None,None,None
+                for train_batch, target_batch in zip(train_features, train_targets):
+                    loss,hn,cn = self.train_step(train_batch, target_batch, h0, c0)
+                    if forward_hn_cn:
+                        h0 = hn
+                        c0 = cn
+                    batch_losses.append(loss)
+
+                training_loss = np.mean(batch_losses)
+                self.train_losses.append(training_loss)
+
+                if (epoch <= n_epochs) | (epoch % 50 == 0):
+                    print(
+                        f"[{epoch}/{n_epochs}] Training loss: {training_loss:.4f}\t"
+                    )
+
+                torch.save(self.model.state_dict(), model_statedict_path)       
+
+            if plot_losses:
+                self.plot_losses()
+            
+            return (hn,cn)
 
     def train_step(self, x, y,h0=None,c0=None):
         # Sets model to train mode
