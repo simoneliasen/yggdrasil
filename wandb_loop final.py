@@ -289,26 +289,25 @@ def run(hyper_dick):
         #         if ensemble == 4:
         #             average_pridiction_ensemble_prhour[hubs].append(average_pridiction_ensemble/5) 
 
-        average_mae_allensemble = []
-        average_rmse_allensemble = []
-        #mae[0], is just to get the len of one of the ensemble with 324 days. 
-        #the for loop takes 5 ensemble list consisting of 325 days of mae and rmse
-        #and returns one list with 325, wher each day is the average of the five days
-        for days in range(len(Mae_ensemble_list[0])):
-            average_mae_prday = 0  
-            average_rmse_prday = 0 
-            for ensemble in range(5):  
-                average_mae_prday += Mae_ensemble_list[ensemble][days]                
-                average_rmse_prday += RMSE_ensemble_list[ensemble][days]
-                if ensemble == 4:
-                    average_mae_allensemble.append(average_mae_prday/5)
-                    average_rmse_allensemble.append(average_rmse_prday/5)
+        #calculate mea loss and rmse loss. 
+        #targets er bare 12 lister, hub1 hub2 hub3 første sæson osv. 
+        total_losss = []
+        squared_errors = []
+        predictions_loss= 0
+        for days in range(len(predictions_ensemble[0][0])):
+            for hubs in range(len(predictions_ensemble[0])):
+                predictions_loss= 0
+                for ensemble in range(len(predictions_ensemble)):
+                    target = targets_ensemble[hubs][days]
+                    predictions_loss+= abs(predictions_ensemble[ensemble][hubs][days])
+                    if ensemble == 4:
+                        abs_error = abs(target-(predictions_loss/1))                     
+                        total_losss.append(abs_error)
+                        squared_errors.append(abs_error * abs_error)
 
-        #calulate the total average mae and rmse looss
-        #takes the list of 324 days, which are the average of the five ensembles
-        for days in range(len(average_mae_allensemble)):
-            total_mae_loss+= average_mae_allensemble[days]
-            total_rmse_loss+= average_rmse_allensemble[days]
+        rmse = math.sqrt(sum(squared_errors)*(1/len(squared_errors)))
+        total_mae_loss = sum(total_losss)/len(total_losss)
+
             
        
         #for 24h interval pred and target, has to jumper over  timesteps for each 39h preds/targets...
@@ -330,13 +329,8 @@ def run(hyper_dick):
         #while(i < range(len(baseline_predictions))):
            # wandb.log({f"baseline predictions Hub: NP15": baseline_predictions[i],f"baseline predictions Hub: SP15": baseline_predictions[i + 1],f"baseline predictions Hub: ZP26": targets_ensemble[i + 2]})                                                   
             #i = i + 3
-
-        #all mae and rmse for each day in the test, with an average of the five ensembles
-        for f in range(len(average_mae_allensemble)):
-    
-            wandb.log({f"Average_MAE_loss_pr_day": average_mae_allensemble[f], f"Average_RMSE_loss_pr_day": average_rmse_allensemble[f]})
-                
-        wandb.log({"Total_Average_RMSE_Loss":total_rmse_loss})
+              
+        wandb.log({"Total_Average_RMSE_Loss": rmse})
         
         wandb.log({"Total_Average_MAE_Loss": total_mae_loss})
 
