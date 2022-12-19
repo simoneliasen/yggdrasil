@@ -11,7 +11,7 @@ const admZip = require('adm-zip');
 
 
 //Guide:        --start--      --slut--
-downloadZips(2019, 7, 18, 2022, 9, 18);
+downloadZips(2022, 1, 1, 2022, 9, 18);
 
 //kør: cd api && node oasis-hubs.js
 
@@ -56,10 +56,12 @@ async function downloadZip(startdatetime, enddatetime, i, hubName) {
     .get('http://oasis.caiso.com/oasisapi/SingleZip')
     .query({version:1, 
             resultformat:6, 
-            queryname:'PRC_RTPD_LMP', 
+            //queryname:'PRC_RTPD_LMP',
+            queryname:'PRC_LMP', //dam
             startdatetime:startdatetime, 
             enddatetime:enddatetime, 
-            market_run_id:'RTPD', 
+            //market_run_id:'RTPD', 
+            market_run_id:'DAM', 
             node:hubName
         }) 
     .on('error', function(error) {
