@@ -11,7 +11,7 @@ const admZip = require('adm-zip');
 
 
 //Guide:        --start--      --slut--
-downloadZips(2022, 1, 1, 2022, 9, 18);
+downloadZips(2021, 10, 1, 2021, 12, 31);
 
 //kør: cd api && node oasis-hubs.js
 
