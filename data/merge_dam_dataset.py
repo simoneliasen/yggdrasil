@@ -1,6 +1,6 @@
 import pandas as pd
 
-def format_date(time:str):
+"""def format_date(time:str):
     time = time.replace("T", " ")
     time = time.replace("-00:00", "")
     return time
@@ -29,10 +29,21 @@ for index, row in df.iterrows():
     elif hub_name == "DAM_ZP26":
         df_zp26 = df_zp26.append(tmp_df, ignore_index = True)
 
-
 joined = df_sp15.set_index('hour').join(df_np15.set_index('hour')).join(df_zp26.set_index('hour'))
+joined.to_csv("data/dam_formatted.csv")"""
 
+#dam1:pd.DataFrame = pd.read_csv("data/dam_formatted.csv")
+#dam2:pd.DataFrame = pd.read_csv("data/dam2_formatted.csv")
+#full_dam = dam1.append(dam2, ignore_index=True)
+#full_dam.set_index('hour').to_csv("data/full_dam.csv")
+
+
+dam = pd.read_csv("data/full_dam.csv")
 datasetV3 = pd.read_csv("data/datasetV3.csv")
 
-datasetV4 = datasetV3.set_index('hour').join(joined)
-datasetV4.to_csv("data/datasetV4.csv")
+datasetV4 = datasetV3.set_index('hour').join(dam.set_index('hour'))
+datasetV4.to_csv("data/datasetV6.csv")
+print(datasetV4)
+#row = datasetV4.loc[datasetV4["hour"] == "2021-11-25 04:00:00"]
+#print(row)
+

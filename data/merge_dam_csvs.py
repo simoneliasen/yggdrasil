@@ -17,7 +17,7 @@ for filename in os.listdir(directory):
         df = get_formatted_csv(f)
         dataset_v4 = pd.concat([df, dataset_v4])
 
-dataset_v4.to_csv("dam.csv", index=False)
+dataset_v4.to_csv("dam2.csv", index=False)
 
 
 
